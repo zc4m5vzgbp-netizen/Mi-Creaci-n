@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Mi Terminal" />
+<meta name="theme-color" content="#0B0E11" />
+<title>Mi Terminal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+  :root {
+    --bg: #0B0E11;
+    --surface: #12161B;
+    --surface-alt: #171C22;
+    --hairline: rgba(232, 230, 223, 0.08);
+    --paper: #E8E6DF;
+    --paper-dim: #8B9099;
+    --amber: #D4A954;
+    --gain: #3FB68B;
+    --loss: #E1615A;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--paper); font-family: 'IBM Plex Sans', sans-serif; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .dim { color: var(--paper-dim); }
+  .ticker-bar { border-bottom: 1px solid var(--hairline); overflow: hidden; background: #000; padding: 6px 0; white-space: nowrap; }
+  .ticker-track { display: inline-flex; animation: scroll 22s linear infinite; }
+  @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  .ticker-item { font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-right: 28px; }
+  .container { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .title { font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 18px; letter-spacing: 0.5px; }
+  .subtitle { font-size: 11px; color: var(--amber); letter-spacing: 1px; margin-top: 2px; }
+  .gear-btn { background: none; border: none; cursor: pointer; color: var(--paper-dim); font-size: 18px; padding: 4px; }
+  .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 18px; margin-bottom: 24px; }
+  input[type=text] { background: var(--surface-alt); border: 1px solid var(--hairline); border-radius: 8px; padding: 10px 12px; color: var(--paper); font-family: 'IBM Plex Mono', monospace; font-size: 13px; width: 100%; outline: none; }
+  input::placeholder { color: var(--paper-dim); }
+  .btn-primary { background: var(--amber); color: #12161B; border: none; border-radius: 8px; padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .btn-primary:disabled { opacity: 0.6; }
+  .btn-ghost { background: none; border: none; color: var(--paper-dim); font-size: 13px; cursor: pointer; }
+  .search-box { position: relative; margin-bottom: 20px; }
+  .search-input-row { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--hairline); border-radius: 8px; padding: 10px 12px; }
+  .search-input-row input { border: none; background: transparent; padding: 0; }
+  .search-results { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface-alt); border: 1px solid var(--hairline); border-radius: 8px; margin-top: 4px; overflow-y: auto; max-height: 260px; z-index: 10; }
+  .search-result-item { width: 100%; padding: 10px 12px; background: none; border: none; border-bottom: 1px solid var(--hairline); text-align: left; cursor: pointer; color: var(--paper); display: block; }
+  .quote-price { font-family: 'IBM Plex Mono', monospace; font-size: 36px; font-weight: 700; line-height: 1.1; }
+  .change-tag { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .watchlist-row { width: 100%; padding: 12px 14px; background: none; border: none; border-bottom: 1px solid var(--hairline); cursor: pointer; text-align: left; color: var(--paper); display: flex; align-items: center; justify-content: space-between; }
+  .watchlist-row:last-child { border-bottom: none; }
+  .watchlist-row.active { background: var(--surface-alt); }
+  .italic-note { font-size: 11.5px; color: var(--paper-dim); line-height: 1.5; font-style: italic; margin-top: 28px; }
+  .indicator-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--hairline); gap: 12px; }
+  .indicator-row:last-of-type { border-bottom: none; }
+  .indicator-label { font-size: 13px; }
+  .indicator-caption { font-size: 11px; color: var(--paper-dim); margin-top: 2px; }
+  .tag-good { color: var(--gain); }
+  .tag-bad { color: var(--loss); }
+  .tag-neutral { color: var(--paper-dim); }
+  .scan-btn { border: 1px solid var(--hairline); border-radius: 6px; padding: 5px 10px; font-size: 11px; }
+  .card-title { font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+  .news-item { display: block; padding: 10px 0; border-bottom: 1px solid var(--hairline); text-decoration: none; color: var(--paper); }
+  .news-item:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+  <div class="ticker-bar"><div id="tickerTrack" class="ticker-track"><span class="ticker-item dim">conectando…</span></div></div>
+
+  <div class="container">
+    <header>
+      <div>
+        <div class="title">MI TERMINAL</div>
+        <div class="subtitle">FASE 5 · DOS FUENTES DE NOTICIAS REALES</div>
+      </div>
+      <button class="gear-btn" id="gearBtn" style="display:none" aria-label="Configuración">⚙</button>
+    </header>
+
+    <div id="settingsPanel" class="card">
+      <div class="mono" style="font-weight:700; font-size:16px; margin-bottom:6px;" id="settingsTitle">Conecta tus datos reales</div>
+      <div class="dim" style="font-size:13px; margin-bottom:6px; line-height:1.5;">Clave de Finnhub (obligatoria) — precios en vivo y noticias.</div>
+      <input type="text" id="keyInput" placeholder="pega tu clave de Finnhub" autocapitalize="off" autocorrect="off" style="margin-bottom:14px;" />
+      <div class="dim" style="font-size:13px; margin-bottom:6px; line-height:1.5;">Clave de Alpha Vantage (opcional) — para indicadores y señales.</div>
+      <input type="text" id="avKeyInput" placeholder="pega tu clave de Alpha Vantage (opcional)" autocapitalize="off" autocorrect="off" style="margin-bottom:10px;" />
+      <div id="keyError" style="color: var(--loss); font-size:12.5px; margin-bottom:10px; display:none;"></div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button class="btn-primary" id="saveKeyBtn">Guardar y conectar</button>
+        <button class="btn-ghost" id="cancelSettingsBtn" style="display:none;">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="mainPanel" style="display:none;">
+      <div class="search-box">
+        <div class="search-input-row">
+          <span class="mono" style="color: var(--amber); margin-right:4px;">&gt;</span>
+          <input type="text" id="searchInput" placeholder="buscar símbolo (ej. AAPL, TSLA)" />
+        </div>
+        <div id="searchResults" class="search-results" style="display:none;"></div>
+      </div>
+
+      <div class="card" id="quoteCard"></div>
+
+      <div class="card">
+        <div class="card-title">Gráfico en vivo</div>
+        <div id="chartWidgetContainer" style="height:420px;"></div>
+      </div>
+
+      <div class="card" id="indicatorsCard"></div>
+
+      <div class="card" id="priceActionCard"></div>
+
+      <div class="card">
+        <div class="card-title">Noticias — TradingView</div>
+        <div id="newsWidgetContainer"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Noticias — Finnhub</div>
+        <div id="extraNewsBox"></div>
+      </div>
+
+      <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <div class="mono dim" style="font-size:12px; letter-spacing:1px; text-transform:uppercase;">Mi lista</div>
+          <button class="btn-ghost scan-btn" id="scanBtn" onclick="scanWatchlist()">Escanear señales</button>
+        </div>
+        <div id="scanStatus" class="dim" style="font-size:11.5px; margin-bottom:8px;"></div>
+        <div id="watchlistBox"></div>
+      </div>
+
+      <div class="italic-note">Precio y cambio del día: datos reales de Finnhub, en vivo, y se refrescan solos cada 60 segundos. Gráfico y noticias: TradingView y Finnhub, en vivo. Indicadores, puntaje y acción del precio: historial real de Alpha Vantage (máx. 25 consultas gratis al día). Nada de esto es una recomendación de inversión.</div>
+    </div>
+  </div>
+
+<script>
+  const API_BASE = 'https://finnhub.io/api/v1';
+  const AV_BASE = 'https://www.alphavantage.co/query';
+
+  function safeParseJSON(str, fallback) {
+    if (str === null || str === undefined) return fallback;
+    try { return JSON.parse(str); } catch (e) { return fallback; }
+  }
+  function safeSetItem(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) { console.error('No se pudo guardar', key, e); }
+  }
+  function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+  async function fetchWithRetry(url, attempts) {
+    attempts = attempts || 2;
+    let lastErr;
+    for (let i = 0; i <= attempts; i++) {
+      try { return await fetch(url); }
+      catch (e) { lastErr = e; if (i < attempts) await sleep(1200 * (i + 1)); }
+    }
+    throw lastErr;
+  }
+
+  const state = {
+    apiKey: localStorage.getItem('finnhub_api_key') || null,
+    avKey: localStorage.getItem('alphavantage_api_key') || null,
+    watchlist: safeParseJSON(localStorage.getItem('watchlist'), ['AAPL', 'TSLA', 'NVDA']),
+    selected: 'AAPL',
+    cache: {},
+    indicatorsCache: safeParseJSON(localStorage.getItem('indicators_cache'), {}),
+    newsCache: {},
+  };
+
+  function escapeHTML(str) {
+    return String(str ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function fmtPrice(n) {
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function changeTagHTML(pct, abs, big) {
+    const up = (pct ?? 0) >= 0;
+    const color = up ? 'var(--gain)' : 'var(--loss)';
+    const size = big ? '15px' : '12.5px';
+    return `<span class="change-tag" style="color:${color}; font-size:${size};">${up?'▲':'▼'} ${up?'+':''}${fmtPrice(abs)} (${up?'+':''}${(pct??0).toFixed(2)}%)</span>`;
+  }
+  function timeAgo(unixSeconds) {
+    if (!unixSeconds) return '';
+    const diffMs = Date.now() - unixSeconds * 1000;
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 60) return mins + ' min';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + ' h';
+    return Math.floor(hours / 24) + ' d';
+  }
+
+  // ---- Widget real de TradingView (gráfico y noticias) ----
+  function renderTradingViewWidget(containerId, scriptSrc, config) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '<div class="tradingview-widget-container__widget"></div>';
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = scriptSrc;
+    script.async = true;
+    script.textContent = JSON.stringify(config);
+    container.appendChild(script);
+  }
+  function renderChartWidget() {
+    renderTradingViewWidget('chartWidgetContainer', 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js', {
+      autosize: true, symbol: state.selected, interval: 'D', timezone: 'Etc/UTC',
+      theme: 'dark', style: '1', locale: 'es', allow_symbol_change: false,
+    });
+  }
+  function renderNewsWidget() {
+    renderTradingViewWidget('newsWidgetContainer', 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js', {
+      feedMode: 'symbol', symbol: state.selected, colorTheme: 'dark', isTransparent: true,
+      displayMode: 'regular', width: '100%', height: 400, locale: 'es',
+    });
+  }
+
+  // ---- Segunda fuente real de noticias: Finnhub ----
+  async function fetchExtraNews(symbol) {
+    state.newsCache[symbol] = { loading: true };
+    renderExtraNews();
+    try {
+      const today = new Date();
+      const toStr = today.toISOString().slice(0, 10);
+      const fromDate = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
+      const fromStr = fromDate.toISOString().slice(0, 10);
+      const res = await fetchWithRetry(`${API_BASE}/company-news?symbol=${encodeURIComponent(symbol)}&from=${fromStr}&to=${toStr}&token=${state.apiKey}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error('No se pudieron cargar las noticias.');
+      const items = (Array.isArray(data) ? data : []).slice(0, 8);
+      state.newsCache[symbol] = { loading: false, error: null, items, fetchedDate: toStr };
+    } catch (e) {
+      state.newsCache[symbol] = { loading: false, error: e.message || 'No se pudieron cargar las noticias.' };
+    }
+    renderExtraNews();
+  }
+  function maybeFetchExtraNews(symbol) {
+    const today = new Date().toISOString().slice(0, 10);
+    const cached = state.newsCache[symbol];
+    if (cached && cached.fetchedDate === today && !cached.error) { renderExtraNews(); return; }
+    fetchExtraNews(symbol);
+  }
+  function renderExtraNews() {
+    const box = document.getElementById('extraNewsBox');
+    if (!box) return;
+    if (!state.apiKey) { box.innerHTML = ''; return; }
+    const data = state.newsCache[state.selected];
+    if (!data || data.loading) { box.innerHTML = `<div class="dim" style="font-size:13px;">Cargando noticias…</div>`; return; }
+    if (data.error) { box.innerHTML = `<div style="color:var(--loss); font-size:13px;">${escapeHTML(data.error)}</div>`; return; }
+    if (!data.items || data.items.length === 0) { box.innerHTML = `<div class="dim" style="font-size:13px;">No hay noticias recientes para este símbolo.</div>`; return; }
+    box.innerHTML = data.items.map((item) => `
+      <a class="news-item" href="${escapeHTML(item.url || '#')}" target="_blank" rel="noopener">
+        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+          <span class="mono" style="font-size:10.5px; color:var(--amber); text-transform:uppercase;">${escapeHTML(item.source || 'Finnhub')}</span>
+          <span class="dim" style="font-size:10.5px;">${timeAgo(item.datetime)}</span>
+        </div>
+        <div style="font-size:13px; line-height:1.4;">${escapeHTML(item.headline || '')}</div>
+      </a>
+    `).join('');
+  }
+
+  // ---- Matemática de indicadores técnicos ----
+  function computeSMA(values, period) {
+    if (values.length < period) return null;
+    const tail = values.slice(-period);
+    return tail.reduce((a, b) => a + b, 0) / period;
+  }
+  function computeEMASeries(closes, period) {
+    if (closes.length < period) return [];
+    const k = 2 / (period + 1);
+    const emaArr = [];
+    let sma = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+    emaArr[period - 1] = sma;
+    for (let i = period; i < closes.length; i++) {
+      emaArr[i] = closes[i] * k + emaArr[i - 1] * (1 - k);
+    }
+    return emaArr;
+  }
+  function computeRSI(closes, period) {
+    if (closes.length < period + 1) return null;
+    let gains = 0, losses = 0;
+    for (let i = 1; i <= period; i++) {
+      const diff = closes[i] - closes[i - 1];
+      if (diff >= 0) gains += diff; else losses -= diff;
+    }
+    let avgGain = gains / period, avgLoss = losses / period;
+    for (let i = period + 1; i < closes.length; i++) {
+      const diff = closes[i] - closes[i - 1];
+      const gain = diff > 0 ? diff : 0;
+      const loss = diff < 0 ? -diff : 0;
+      avgGain = (avgGain * (period - 1) + gain) / period;
+      avgLoss = (avgLoss * (period - 1) + loss) / period;
+    }
+    if (avgLoss === 0) return 100;
+    const rs = avgGain / avgLoss;
+    return 100 - 100 / (1 + rs);
+  }
+  function computeMACD(closes) {
+    const ema12 = computeEMASeries(closes, 12);
+    const ema26 = computeEMASeries(closes, 26);
+    if (!ema26.length) return null;
+    const macdValues = [];
+    for (let i = 25; i < closes.length; i++) {
+      if (ema12[i] !== undefined && ema26[i] !== undefined) macdValues.push(ema12[i] - ema26[i]);
+    }
+    const signalSeries = computeEMASeries(macdValues, 9);
+    const lastMacd = macdValues[macdValues.length - 1];
+    const lastSignal = signalSeries[signalSeries.length - 1];
+    if (lastMacd === undefined) return null;
+    if (lastSignal === undefined) return { line: lastMacd, signal: null, hist: null };
+    return { line: lastMacd, signal: lastSignal, hist: lastMacd - lastSignal };
+  }
+
+  // ---- Acción del precio: soporte y resistencia a partir de máximos/mínimos ----
+  function computePriceAction(highs, lows, currentPrice) {
+    const window = 3;
+    const points = [];
+    for (let i = window; i < highs.length - window; i++) {
+      let isSwingHigh = true, isSwingLow = true;
+      for (let j = i - window; j <= i + window; j++) {
+        if (j === i) continue;
+        if (highs[j] >= highs[i]) isSwingHigh = false;
+        if (lows[j] <= lows[i]) isSwingLow = false;
+      }
+      if (isSwingHigh) points.push(highs[i]);
+      if (isSwingLow) points.push(lows[i]);
+    }
+    if (points.length === 0) return null;
+    const sorted = points.slice().sort((a, b) => a - b);
+    const clusters = [];
+    sorted.forEach((p) => {
+      let merged = false;
+      for (const c of clusters) {
+        if (Math.abs(p - c.avg) / c.avg <= 0.015) {
+          c.points.push(p);
+          c.avg = c.points.reduce((a, b) => a + b, 0) / c.points.length;
+          merged = true;
+          break;
+        }
+      }
+      if (!merged) clusters.push({ points: [p], avg: p });
+    });
+    const levels = clusters.map((c) => ({ price: c.avg, touches: c.points.length })).filter((c) => c.touches >= 2);
+    const support = levels.filter((l) => l.price < currentPrice).sort((a, b) => b.price - a.price);
+    const resistance = levels.filter((l) => l.price > currentPrice).sort((a, b) => a.price - b.price);
+    return { nearestSupport: support[0] || null, nearestResistance: resistance[0] || null };
+  }
+
+  // ---- Puntaje de entrada (0-100), reglas ajustables y transparentes ----
+  function computeEntryScore(ind) {
+    const price = ind.lastClose;
+    const breakdown = [];
+    let score = 0;
+
+    const p1 = (ind.sma50 != null && price > ind.sma50) ? 20 : 0;
+    score += p1;
+    breakdown.push({ label: 'Tendencia mediano plazo (precio vs SMA50)', points: p1, max: 20 });
+
+    const p2 = (ind.sma20 != null && price > ind.sma20) ? 15 : 0;
+    score += p2;
+    breakdown.push({ label: 'Tendencia corto plazo (precio vs SMA20)', points: p2, max: 15 });
+
+    const p3 = (ind.sma20 != null && ind.sma50 != null && ind.sma20 > ind.sma50) ? 5 : 0;
+    score += p3;
+    breakdown.push({ label: 'Medias alineadas (SMA20 > SMA50)', points: p3, max: 5 });
+
+    let p4 = 0;
+    if (ind.rsi14 != null) {
+      if (ind.rsi14 >= 35 && ind.rsi14 <= 55) p4 = 30;
+      else if ((ind.rsi14 >= 25 && ind.rsi14 < 35) || (ind.rsi14 > 55 && ind.rsi14 <= 65)) p4 = 15;
+      else if (ind.rsi14 < 25 || (ind.rsi14 > 65 && ind.rsi14 < 70)) p4 = 5;
+    }
+    score += p4;
+    breakdown.push({ label: 'RSI en zona saludable', points: p4, max: 30 });
+
+    const p5 = (ind.macd && ind.macd.signal != null && ind.macd.line > ind.macd.signal) ? 15 : 0;
+    score += p5;
+    breakdown.push({ label: 'MACD por encima de su señal', points: p5, max: 15 });
+
+    const p6 = ind.freshCross ? 15 : 0;
+    score += p6;
+    breakdown.push({ label: 'Cruce alcista de MACD reciente', points: p6, max: 15 });
+
+    let verdict = 'Débil por ahora', verdictClass = 'tag-bad';
+    if (score >= 70) { verdict = 'Configuración técnica fuerte'; verdictClass = 'tag-good'; }
+    else if (score >= 40) { verdict = 'Mixta / neutral'; verdictClass = 'tag-neutral'; }
+
+    return { score, breakdown, verdict, verdictClass };
+  }
+
+  async function fetchSymbol(symbol) {
+    const existingName = state.cache[symbol] && state.cache[symbol].name;
+    state.cache[symbol] = Object.assign({}, state.cache[symbol], { loading: true, error: null });
+    renderQuote(); renderWatchlist(); renderTicker();
+    try {
+      const qRes = await fetchWithRetry(`${API_BASE}/quote?symbol=${encodeURIComponent(symbol)}&token=${state.apiKey}`);
+      const q = await qRes.json();
+      if (!qRes.ok || q.error) throw new Error(q.error || 'No se pudo obtener el precio');
+      if (q.c === 0 && q.pc === 0) throw new Error('Símbolo no encontrado');
+      let name = existingName || symbol;
+      if (!existingName) {
+        try {
+          const pRes = await fetchWithRetry(`${API_BASE}/stock/profile2?symbol=${encodeURIComponent(symbol)}&token=${state.apiKey}`);
+          if (pRes.ok) { const p = await pRes.json(); if (p && p.name) name = p.name; }
+        } catch (e) {}
+      }
+      state.cache[symbol] = { loading: false, error: null, name, price: q.c, changeAbs: q.d ?? 0, changePct: q.dp ?? 0 };
+    } catch (e) {
+      state.cache[symbol] = Object.assign({}, state.cache[symbol], { loading: false, error: e.message || 'Error de conexión' });
+    }
+    renderQuote(); renderWatchlist(); renderTicker();
+  }
+
+  async function fetchIndicators(symbol, force) {
+    const today = new Date().toISOString().slice(0, 10);
+    const cached = state.indicatorsCache[symbol];
+    if (!force && cached && cached.fetchedDate === today && !cached.error) { renderIndicators(); renderWatchlist(); return; }
+    state.indicatorsCache[symbol] = { loading: true };
+    renderIndicators();
+    try {
+      const res = await fetchWithRetry(`${AV_BASE}?function=TIME_SERIES_DAILY&symbol=${encodeURIComponent(symbol)}&outputsize=compact&apikey=${state.avKey}`);
+      const data = await res.json();
+      if (data['Note'] || data['Information']) throw new Error('Se acabaron tus 25 consultas gratis de hoy en Alpha Vantage. Intenta mañana.');
+      const series = data['Time Series (Daily)'];
+      if (!series) throw new Error('No se pudo obtener el historial de este símbolo.');
+      const dates = Object.keys(series).sort();
+      const closes = dates.map((d) => parseFloat(series[d]['4. close']));
+      const highs = dates.map((d) => parseFloat(series[d]['2. high']));
+      const lows = dates.map((d) => parseFloat(series[d]['3. low']));
+      const volumes = dates.map((d) => parseFloat(series[d]['5. volume']));
+      const macd = computeMACD(closes);
+      const macdYesterday = computeMACD(closes.slice(0, -1));
+      const freshCross = !!(macdYesterday && macd && macdYesterday.signal != null && macd.signal != null && macdYesterday.line <= macdYesterday.signal && macd.line > macd.signal);
+      state.indicatorsCache[symbol] = {
+        loading: false, error: null, fetchedDate: today,
+        lastClose: closes[closes.length - 1],
+        sma20: computeSMA(closes, 20),
+        sma50: computeSMA(closes, 50),
+        rsi14: computeRSI(closes, 14),
+        macd: macd,
+        freshCross: freshCross,
+        priceAction: computePriceAction(highs, lows, closes[closes.length - 1]),
+        todayVolume: volumes[volumes.length - 1],
+        avgVolume20: computeSMA(volumes, 20),
+      };
+      safeSetItem('indicators_cache', JSON.stringify(state.indicatorsCache));
+    } catch (e) {
+      state.indicatorsCache[symbol] = { loading: false, error: e.message || 'Error al obtener indicadores.' };
+    }
+    renderIndicators();
+    renderWatchlist();
+  }
+
+  async function scanWatchlist() {
+    if (!state.avKey) {
+      document.getElementById('scanStatus').textContent = 'Agrega tu clave de Alpha Vantage en ⚙ primero.';
+      return;
+    }
+    const btn = document.getElementById('scanBtn');
+    const status = document.getElementById('scanStatus');
+    btn.disabled = true;
+    const today = new Date().toISOString().slice(0, 10);
+    const symbols = state.watchlist;
+    for (let i = 0; i < symbols.length; i++) {
+      const sym = symbols[i];
+      const cached = state.indicatorsCache[sym];
+      const needsFetch = !cached || cached.fetchedDate !== today || cached.error;
+      if (needsFetch) {
+        status.textContent = `Consultando ${sym} (${i + 1}/${symbols.length})…`;
+        await fetchIndicators(sym);
+        if (i < symbols.length - 1) {
+          status.textContent = 'Esperando por el límite gratis de consultas por minuto…';
+          await sleep(13000);
+        }
+      }
+    }
+    status.textContent = symbols.length ? 'Listo.' : '';
+    btn.disabled = false;
+    renderWatchlist();
+  }
+
+  function toggleWatch(symbol) {
+    const has = state.watchlist.includes(symbol);
+    state.watchlist = has ? state.watchlist.filter(s => s !== symbol) : state.watchlist.concat([symbol]);
+    safeSetItem('watchlist', JSON.stringify(state.watchlist));
+    if (!has && !state.cache[symbol]) fetchSymbol(symbol);
+    else { renderWatchlist(); renderQuote(); }
+  }
+
+  function selectSymbol(symbol) {
+    state.selected = symbol;
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchResults').style.display = 'none';
+    if (!state.cache[symbol] || state.cache[symbol].error) fetchSymbol(symbol);
+    else { renderQuote(); renderWatchlist(); }
+    renderIndicators();
+    renderChartWidget();
+    renderNewsWidget();
+    maybeFetchExtraNews(symbol);
+  }
+
+  function renderTicker() {
+    const symbols = Array.from(new Set([state.selected].concat(state.watchlist)));
+    const items = symbols.map(s => Object.assign({ symbol: s }, state.cache[s])).filter(c => c && c.price != null);
+    const track = document.getElementById('tickerTrack');
+    if (items.length === 0) { track.innerHTML = '<span class="ticker-item dim">conectando con el mercado…</span>'; return; }
+    const doubled = items.concat(items);
+    track.innerHTML = doubled.map(s => `<span class="ticker-item" style="color:${s.changePct>=0?'var(--gain)':'var(--loss)'}"><span class="dim">${s.symbol}</span> ${fmtPrice(s.price)} ${s.changePct>=0?'▲':'▼'} ${(s.changePct??0).toFixed(2)}%</span>`).join('');
+  }
+
+  function renderQuote() {
+    const s = state.cache[state.selected];
+    const card = document.getElementById('quoteCard');
+    const inWatch = state.watchlist.includes(state.selected);
+    let body;
+    if (!s || s.loading) {
+      body = '<div class="dim" style="font-size:13px; padding:20px 0;">Cargando cotización…</div>';
+    } else if (s.error) {
+      body = `<div style="padding:12px 0;"><div style="color:var(--loss); font-size:13px; margin-bottom:8px;">${escapeHTML(s.error)}</div><button class="btn-ghost" style="background:var(--surface-alt); border:1px solid var(--hairline); border-radius:6px; padding:6px 12px;" onclick="fetchSymbol('${state.selected}')">Reintentar</button></div>`;
+    } else {
+      body = `<div class="quote-price">$${fmtPrice(s.price)}</div><div style="margin-top:4px;">${changeTagHTML(s.changePct, s.changeAbs, true)}</div>`;
+    }
+    card.innerHTML = `<div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px;"><div><div class="mono" style="font-weight:700; font-size:22px;">${state.selected}</div><div class="dim" style="font-size:13px;">${s && s.name ? escapeHTML(s.name) : (s && s.loading ? 'Cargando…' : '')}</div></div><div style="display:flex; align-items:center; gap:6px;"><button class="btn-ghost" onclick="fetchSymbol('${state.selected}')" aria-label="Actualizar">🔄</button><button class="btn-ghost" style="font-size:18px; color:${inWatch?'var(--amber)':'var(--paper-dim)'}" onclick="toggleWatch('${state.selected}')" aria-label="Favorito">★</button></div></div>${body}`;
+  }
+
+  function renderIndicators() {
+    const card = document.getElementById('indicatorsCard');
+    if (!state.avKey) {
+      card.innerHTML = `<div class="card-title">Indicadores y puntaje de entrada</div><div class="dim" style="font-size:13px;">Agrega tu clave gratuita de Alpha Vantage en ⚙ para desbloquear esto.</div>`;
+      renderPriceAction();
+      return;
+    }
+    const data = state.indicatorsCache[state.selected];
+    if (!data) {
+      card.innerHTML = `<div class="card-title">Indicadores y puntaje de entrada</div><button class="btn-primary" onclick="fetchIndicators('${state.selected}')">Analizar ${state.selected}</button><div class="dim" style="font-size:11px; margin-top:8px;">Usa 1 de tus 25 consultas gratis del día. Se guarda hasta mañana.</div>`;
+      renderPriceAction();
+      return;
+    }
+    if (data.loading) {
+      card.innerHTML = `<div class="card-title">Indicadores y puntaje de entrada</div><div class="dim" style="font-size:13px;">Calculando…</div>`;
+      renderPriceAction();
+      return;
+    }
+    if (data.error) {
+      card.innerHTML = `<div class="card-title">Indicadores y puntaje de entrada</div><div style="color:var(--loss); font-size:13px; margin-bottom:8px;">${escapeHTML(data.error)}</div><button class="btn-ghost" style="background:var(--surface-alt); border:1px solid var(--hairline); border-radius:6px; padding:6px 12px;" onclick="fetchIndicators('${state.selected}', true)">Reintentar</button>`;
+      renderPriceAction();
+      return;
+    }
+    const score = computeEntryScore(data);
+    const price = data.lastClose;
+    const smaClass = (sma) => sma == null ? 'tag-neutral' : (price > sma ? 'tag-good' : 'tag-bad');
+    const smaLabel = (sma) => sma == null ? '—' : (price > sma ? 'precio arriba ▲' : 'precio abajo ▼');
+    let rsiClass = 'tag-neutral', rsiLabel = '—';
+    if (data.rsi14 != null) {
+      if (data.rsi14 >= 70) { rsiClass = 'tag-bad'; rsiLabel = 'sobrecompra'; }
+      else if (data.rsi14 <= 30) { rsiClass = 'tag-good'; rsiLabel = 'sobreventa'; }
+      else { rsiLabel = 'neutral'; }
+    }
+    let macdClass = 'tag-neutral', macdLabel = '—';
+    if (data.macd && data.macd.signal != null) {
+      macdClass = data.macd.line > data.macd.signal ? 'tag-good' : 'tag-bad';
+      macdLabel = data.macd.line > data.macd.signal ? 'alcista' : 'bajista';
+    }
+    let volLabel = '—', volClass = 'tag-neutral';
+    if (data.avgVolume20 && data.todayVolume) {
+      const ratio = data.todayVolume / data.avgVolume20;
+      if (ratio >= 1.3) { volLabel = ratio.toFixed(1) + 'x — alto'; volClass = 'tag-good'; }
+      else if (ratio <= 0.7) { volLabel = ratio.toFixed(1) + 'x — bajo'; volClass = 'tag-bad'; }
+      else { volLabel = ratio.toFixed(1) + 'x — normal'; }
+    }
+    card.innerHTML = `
+      <div style="margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--hairline);">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div class="mono" style="font-size:30px; font-weight:700;">${score.score}<span style="font-size:14px; color:var(--paper-dim);">/100</span></div>
+          <div class="${score.verdictClass} mono" style="font-size:13px; font-weight:600; text-align:right;">${score.verdict}</div>
+        </div>
+        ${score.breakdown.map(b => `<div style="display:flex; justify-content:space-between; font-size:11px; color:var(--paper-dim); margin-top:3px;"><span>${b.label}</span><span class="mono">${b.points}/${b.max}</span></div>`).join('')}
+        <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">Esto es un resumen de reglas técnicas — no es una recomendación de inversión ni predice el futuro.</div>
+      </div>
+      <div class="dim" style="font-size:11px; margin-bottom:2px;">Detalle · cierre del ${data.fetchedDate}</div>
+      <div class="indicator-row"><div><div class="indicator-label">SMA20</div><div class="indicator-caption">Precio promedio de 20 días.</div></div><div style="text-align:right;"><div class="mono">${data.sma20 != null ? fmtPrice(data.sma20) : '—'}</div><div class="${smaClass(data.sma20)}" style="font-size:12px;">${smaLabel(data.sma20)}</div></div></div>
+      <div class="indicator-row"><div><div class="indicator-label">SMA50</div><div class="indicator-caption">Tendencia de mediano plazo.</div></div><div style="text-align:right;"><div class="mono">${data.sma50 != null ? fmtPrice(data.sma50) : '—'}</div><div class="${smaClass(data.sma50)}" style="font-size:12px;">${smaLabel(data.sma50)}</div></div></div>
+      <div class="indicator-row"><div><div class="indicator-label">RSI (14)</div><div class="indicator-caption">&gt;70 sobrecompra, &lt;30 sobreventa.</div></div><div style="text-align:right;"><div class="mono">${data.rsi14 != null ? data.rsi14.toFixed(1) : '—'}</div><div class="${rsiClass}" style="font-size:12px;">${rsiLabel}</div></div></div>
+      <div class="indicator-row"><div><div class="indicator-label">MACD (12,26,9)</div><div class="indicator-caption">Cambios de tendencia.</div></div><div style="text-align:right;"><div class="mono">${data.macd && data.macd.line != null ? data.macd.line.toFixed(2) : '—'}</div><div class="${macdClass}" style="font-size:12px;">${macdLabel}</div></div></div>
+      <div class="indicator-row"><div><div class="indicator-label">Volumen vs promedio 20d</div><div class="indicator-caption">Volumen alto = más "convicción" detrás del movimiento.</div></div><div style="text-align:right;"><div class="mono ${volClass}">${volLabel}</div></div></div>
+      <button class="btn-ghost" style="margin-top:6px;" onclick="fetchIndicators('${state.selected}', true)">Actualizar (usa 1 consulta)</button>
+    `;
+    renderPriceAction();
+  }
+
+  function renderPriceAction() {
+    const card = document.getElementById('priceActionCard');
+    if (!state.avKey) { card.innerHTML = ''; return; }
+    const data = state.indicatorsCache[state.selected];
+    if (!data || data.loading) {
+      card.innerHTML = `<div class="card-title">Acción del precio</div><div class="dim" style="font-size:13px;">Se calcula junto con los indicadores — toca "Analizar" arriba.</div>`;
+      return;
+    }
+    if (data.error || !data.priceAction) {
+      card.innerHTML = `<div class="card-title">Acción del precio</div><div class="dim" style="font-size:13px;">No hay suficientes datos todavía para este símbolo.</div>`;
+      return;
+    }
+    const pa = data.priceAction;
+    const price = data.lastClose;
+    let proximityNote = '';
+    if (pa.nearestSupport) {
+      const distPct = ((price - pa.nearestSupport.price) / price) * 100;
+      if (distPct <= 2) proximityNote += `<div class="tag-good" style="font-size:12px; margin-top:8px;">Estás muy cerca de un soporte fuerte — zona vigilada por muchos traders.</div>`;
+    }
+    if (pa.nearestResistance) {
+      const distPct = ((pa.nearestResistance.price - price) / price) * 100;
+      if (distPct <= 2) proximityNote += `<div class="tag-bad" style="font-size:12px; margin-top:4px;">Estás muy cerca de una resistencia — el precio podría rebotar hacia abajo aquí.</div>`;
+    }
+    card.innerHTML = `
+      <div class="card-title" style="margin-bottom:4px;">Acción del precio</div>
+      <div class="dim" style="font-size:11px; margin-bottom:10px;">Niveles donde el precio rebotó varias veces en los últimos ~100 días</div>
+      <div class="indicator-row"><div><div class="indicator-label">Resistencia más cercana</div><div class="indicator-caption">${pa.nearestResistance ? pa.nearestResistance.touches + ' toques históricos' : 'No se encontró una clara arriba del precio actual'}</div></div><div style="text-align:right;"><div class="mono tag-bad">${pa.nearestResistance ? '$' + fmtPrice(pa.nearestResistance.price) : '—'}</div></div></div>
+      <div class="indicator-row"><div><div class="indicator-label">Soporte más cercano</div><div class="indicator-caption">${pa.nearestSupport ? pa.nearestSupport.touches + ' toques históricos' : 'No se encontró uno claro abajo del precio actual'}</div></div><div style="text-align:right;"><div class="mono tag-good">${pa.nearestSupport ? '$' + fmtPrice(pa.nearestSupport.price) : '—'}</div></div></div>
+      ${proximityNote}
+      <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">Un "soporte" es un precio donde la acción ha rebotado hacia arriba varias veces. Una "resistencia" es donde ha chocado y bajado. Ninguno garantiza que se repita.</div>
+    `;
+  }
+
+  function renderWatchlist() {
+    const box = document.getElementById('watchlistBox');
+    if (state.watchlist.length === 0) {
+      box.innerHTML = '<div style="border:1px dashed var(--hairline); border-radius:8px; padding:16px; color:var(--paper-dim); font-size:13px;">Toca la estrella de un valor para añadirlo aquí.</div>';
+      return;
+    }
+    box.innerHTML = '<div style="border:1px solid var(--hairline); border-radius:8px; overflow:hidden;">' + state.watchlist.map(sym => {
+      const s = state.cache[sym];
+      const ind = state.indicatorsCache[sym];
+      const active = sym === state.selected;
+      let priceBlock = '';
+      if (s && !s.loading && !s.error) {
+        priceBlock = `<div class="mono" style="font-size:13px;">${fmtPrice(s.price)}</div>${changeTagHTML(s.changePct, s.changeAbs)}`;
+      }
+      let scoreBlock = '';
+      if (ind && !ind.loading && !ind.error) {
+        const sc = computeEntryScore(ind);
+        scoreBlock = `<div class="mono ${sc.verdictClass}" style="font-size:11px; margin-top:3px;">${sc.score}/100</div>`;
+      }
+      const nameLabel = s && s.name ? escapeHTML(s.name) : (s && s.loading ? 'Cargando…' : (s && s.error ? 'Error' : ''));
+      return `<button class="watchlist-row ${active?'active':''}" onclick="selectSymbol('${sym}')"><span style="display:flex; align-items:center;"><span style="color:var(--amber); margin-right:10px;">★</span><span><span class="mono" style="font-weight:600; margin-right:8px;">${sym}</span><span class="dim" style="font-size:12.5px;">${nameLabel}</span></span></span><span style="text-align:right;">${priceBlock}${scoreBlock}</span></button>`;
+    }).join('') + '</div>';
+  }
+
+  let searchTimer = null;
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const q = e.target.value.trim();
+    clearTimeout(searchTimer);
+    const resultsBox = document.getElementById('searchResults');
+    if (!q) { resultsBox.style.display = 'none'; return; }
+    searchTimer = setTimeout(async () => {
+      try {
+        const res = await fetchWithRetry(`${API_BASE}/search?q=${encodeURIComponent(q)}&token=${state.apiKey}`, 1);
+        const data = await res.json();
+        const results = (data.result || []).slice(0, 6);
+        if (results.length === 0) { resultsBox.style.display = 'none'; return; }
+        resultsBox.innerHTML = results.map(r => `<button class="search-result-item" onclick="selectSymbol('${r.symbol}')"><span class="mono" style="font-weight:600; margin-right:8px;">${escapeHTML(r.symbol)}</span><span class="dim" style="font-size:12.5px;">${escapeHTML(r.description)}</span></button>`).join('');
+        resultsBox.style.display = 'block';
+      } catch (e) { resultsBox.style.display = 'none'; }
+    }, 400);
+  });
+
+  document.getElementById('saveKeyBtn').addEventListener('click', async () => {
+    const input = document.getElementById('keyInput');
+    const avInput = document.getElementById('avKeyInput');
+    const errBox = document.getElementById('keyError');
+    const trimmed = input.value.trim();
+    const avTrimmed = avInput.value.trim();
+    errBox.style.display = 'none';
+    if (!trimmed) { errBox.textContent = 'Pega tu clave de Finnhub antes de continuar.'; errBox.style.display = 'block'; return; }
+    const btn = document.getElementById('saveKeyBtn');
+    btn.textContent = 'Conectando…'; btn.disabled = true;
+    try {
+      const res = await fetchWithRetry(`${API_BASE}/quote?symbol=AAPL&token=${trimmed}`);
+      const data = await res.json();
+      if (!res.ok || data.error || (data.c === 0 && data.pc === 0)) throw new Error('Esa clave de Finnhub no funcionó. Revisa que la copiaste completa, sin espacios.');
+      state.apiKey = trimmed;
+      safeSetItem('finnhub_api_key', trimmed);
+      if (avTrimmed) { state.avKey = avTrimmed; safeSetItem('alphavantage_api_key', avTrimmed); }
+      showMain();
+      Array.from(new Set([state.selected].concat(state.watchlist))).forEach(fetchSymbol);
+      renderIndicators();
+      renderChartWidget();
+      renderNewsWidget();
+      maybeFetchExtraNews(state.selected);
+    } catch (e) {
+      errBox.textContent = e.message || 'No se pudo conectar. Revisa tu clave.';
+      errBox.style.display = 'block';
+    } finally {
+      btn.textContent = 'Guardar y conectar'; btn.disabled = false;
+    }
+  });
+
+  document.getElementById('gearBtn').addEventListener('click', () => {
+    document.getElementById('keyInput').value = state.apiKey || '';
+    document.getElementById('avKeyInput').value = state.avKey || '';
+    document.getElementById('settingsTitle').textContent = 'Actualizar tus claves';
+    document.getElementById('cancelSettingsBtn').style.display = 'inline-block';
+    document.getElementById('settingsPanel').style.display = 'block';
+    document.getElementById('mainPanel').style.display = 'none';
+  });
+  document.getElementById('cancelSettingsBtn').addEventListener('click', () => {
+    document.getElementById('settingsPanel').style.display = 'none';
+    showMain();
+  });
+
+  function showMain() {
+    document.getElementById('settingsPanel').style.display = 'none';
+    document.getElementById('mainPanel').style.display = 'block';
+    document.getElementById('gearBtn').style.display = 'inline-block';
+  }
+
+  function startAutoRefresh() {
+    setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      if (!state.apiKey) return;
+      Array.from(new Set([state.selected].concat(state.watchlist))).forEach(fetchSymbol);
+    }, 60000);
+  }
+
+  if (state.apiKey) {
+    showMain();
+    Array.from(new Set([state.selected].concat(state.watchlist))).forEach(fetchSymbol);
+    renderIndicators();
+    renderWatchlist();
+    renderChartWidget();
+    renderNewsWidget();
+    maybeFetchExtraNews(state.selected);
+  } else {
+    document.getElementById('settingsPanel').style.display = 'block';
+  }
+  startAutoRefresh();
+</script>
+</body>
+</html>
