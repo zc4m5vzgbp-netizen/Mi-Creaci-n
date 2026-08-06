@@ -2,8 +2,10 @@ import { AV_BASE, HISTORY_DAYS, CHART_DISPLAY_DAYS } from '../constants.js';
 import { state } from '../state.js';
 import { fetchWithRetry } from '../utils/dom.js';
 import { safeSetItem } from '../utils/storage.js';
-import { computeSMA, computeMACD, computeRSI } from '../analysis/indicators.js';
+import { computeSMA, computeMACD, computeRSI, computeEMASeries } from '../analysis/indicators.js';
 import { computePriceAction, detectEngulfingMarkers } from '../analysis/priceAction.js';
+import { computeATR, computeADX, computeBollinger, computeStochastic, computeDonchian, computeIchimoku, computeSuperTrend } from '../analysis/advancedIndicators.js';
+import { computePivotPoints, computeFibonacci } from '../analysis/priceLevels.js';
 import { renderIndicators } from '../ui/indicatorsCard.js';
 import { renderWatchlist } from '../ui/watchlist.js';
 
@@ -34,11 +36,18 @@ export async function fetchIndicators(symbol, force) {
     const recentOhlcForEngulfing = ohlc.slice(-CHART_DISPLAY_DAYS);
     const engulfingMarkers = detectEngulfingMarkers(recentOhlcForEngulfing);
     const lastEngulfing = engulfingMarkers[engulfingMarkers.length - 1];
+
+    const ema200Series = computeEMASeries(closes, 200);
+    const ema200 = ema200Series.length ? ema200Series[ema200Series.length - 1] : null;
+    const prevIdx = closes.length - 2;
+    const pivotPoints = prevIdx >= 0 ? computePivotPoints(highs[prevIdx], lows[prevIdx], closes[prevIdx]) : null;
+
     state.indicatorsCache[symbol] = {
       loading: false, error: null, fetchedDate: today,
       lastClose: closes[closes.length - 1],
       sma20: computeSMA(closes, 20),
       sma50: computeSMA(closes, 50),
+      ema200: ema200,
       rsi14: computeRSI(closes, 14),
       macd: macd,
       freshCross: freshCross,
@@ -51,6 +60,15 @@ export async function fetchIndicators(symbol, force) {
       ohlc: ohlc,
       recentEngulfingCount: engulfingMarkers.length,
       lastEngulfingType: lastEngulfing ? (lastEngulfing.text) : null,
+      atr14: computeATR(highs, lows, closes, 14),
+      adx: computeADX(highs, lows, closes, 14),
+      bollinger: computeBollinger(closes, 20, 2),
+      stochastic: computeStochastic(highs, lows, closes, 14, 3),
+      donchian: computeDonchian(highs, lows, 20),
+      ichimoku: computeIchimoku(highs, lows, closes),
+      superTrend: computeSuperTrend(highs, lows, closes, 10, 3),
+      pivotPoints: pivotPoints,
+      fibonacci: computeFibonacci(highs, lows, 90),
     };
     safeSetItem('indicators_cache', JSON.stringify(state.indicatorsCache));
   } catch (e) {
