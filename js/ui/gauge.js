@@ -21,4 +21,3 @@ export function gaugeSVG(score, maxTotal, verdictClass) {
     </svg>
   `;
 }
-
