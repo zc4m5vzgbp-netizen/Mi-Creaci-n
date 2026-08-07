@@ -6,12 +6,14 @@ import { escapeHTML } from './utils/format.js';
 import { fetchSymbol } from './services/finnhub.js';
 import { fetchIndicators } from './services/alphaVantage.js';
 import { maybeFetchExtraNews } from './services/newsService.js';
+import { maybeFetchMacroData } from './services/macroData.js';
 import { fetchAIAnalysis, translateNews } from './services/aiProxy.js';
 import { renderQuote, shareSymbol } from './ui/quoteCard.js';
 import { renderIndicators } from './ui/indicatorsCard.js';
 import { renderAIAnalysis } from './ui/aiCard.js';
 import { renderChartWidget, renderNewsWidget } from './ui/newsCards.js';
 import { renderWatchlist, renderTicker } from './ui/watchlist.js';
+import { renderFundamentalCard } from './ui/fundamentalCard.js';
 
 function toggleWatch(symbol) {
   const has = state.watchlist.includes(symbol);
@@ -32,6 +34,7 @@ function selectSymbol(symbol) {
   renderNewsWidget();
   maybeFetchExtraNews(symbol);
   renderAIAnalysis();
+  renderFundamentalCard();
 }
 
 async function scanWatchlist() {
@@ -123,6 +126,8 @@ document.getElementById('saveKeyBtn').addEventListener('click', async () => {
     renderNewsWidget();
     maybeFetchExtraNews(state.selected);
     renderAIAnalysis();
+    renderFundamentalCard();
+    maybeFetchMacroData();
   } catch (e) {
     errBox.textContent = e.message || 'No se pudo conectar. Revisa tu clave.';
     errBox.style.display = 'block';
@@ -146,6 +151,8 @@ document.getElementById('cancelSettingsBtn').addEventListener('click', () => {
   showMain();
 });
 
+// Los onclick="..." del HTML generado llaman estas funciones por nombre global.
+// Un módulo ES no las expone solo — hay que asignarlas a window explícitamente.
 window.toggleSection = toggleSection;
 window.toggleWatch = toggleWatch;
 window.selectSymbol = selectSymbol;
@@ -166,4 +173,6 @@ renderChartWidget();
 renderNewsWidget();
 maybeFetchExtraNews(state.selected);
 renderAIAnalysis();
+renderFundamentalCard();
+maybeFetchMacroData();
 startAutoRefresh();
