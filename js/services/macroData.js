@@ -7,8 +7,8 @@ import { renderFundamentalCard } from '../ui/fundamentalCard.js';
 // no cambian según la acción que estés viendo.
 const FRED_SERIES = {
   cpi: 'CPIAUCSL',
-  ppi: 'PPIACO',
-  gdp: 'GDP',
+  ppi: 'PPIFIS',
+  gdp: 'GDPC1',
   fedRate: 'FEDFUNDS',
 };
 
