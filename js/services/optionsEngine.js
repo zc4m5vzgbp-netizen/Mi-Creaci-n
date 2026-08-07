@@ -16,14 +16,15 @@ export async function fetchGEX(symbol) {
       body: JSON.stringify({ gexSymbol: symbol, password: state.aiProxyPassword }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo obtener el GEX.');
+    if (!res.ok) throw new Error(data.error || 'No se pudo obtener los niveles de opciones.');
+    const levels = data.levels || data;
     state.gexCache[symbol] = {
       loading: false, error: null, fetchedAt: Date.now(),
-      netGex: data.net_gex, gammaFlip: data.gamma_flip, regime: data.regime,
+      callWall: levels.call_wall, putWall: levels.put_wall,
     };
     safeSetItem('gex_cache', JSON.stringify(state.gexCache));
   } catch (e) {
-    state.gexCache[symbol] = { loading: false, error: e.message || 'Error al consultar GEX.' };
+    state.gexCache[symbol] = { loading: false, error: e.message || 'Error al consultar los niveles de opciones.' };
   }
   renderOptionsCard();
 }
