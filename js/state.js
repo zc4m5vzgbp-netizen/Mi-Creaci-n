@@ -29,4 +29,6 @@ export const state = {
   newsCache: {},
   macroCache: safeParseJSON(localStorage.getItem('macro_cache'), null),
   gexCache: safeParseJSON(localStorage.getItem('gex_cache'), {}),
+  riskCapital: safeParseJSON(localStorage.getItem('risk_capital'), null),
+  riskPct: safeParseJSON(localStorage.getItem('risk_pct'), 1),
 };
