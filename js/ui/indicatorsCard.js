@@ -7,6 +7,7 @@ import { fmtPrice, escapeHTML } from '../utils/format.js';
 import { renderPriceAction } from './priceActionCard.js';
 import { renderPriceChart } from './priceChart.js';
 import { renderAdvancedIndicators } from './advancedIndicatorsCard.js';
+import { renderMathEngine } from './mathEngineCard.js';
 
 export function renderIndicators() {
   const card = document.getElementById('indicatorsCard');
@@ -15,6 +16,7 @@ export function renderIndicators() {
     renderPriceAction();
     renderPriceChart();
     renderAdvancedIndicators();
+    renderMathEngine();
     return;
   }
   const data = state.indicatorsCache[state.selected];
@@ -23,6 +25,7 @@ export function renderIndicators() {
     renderPriceAction();
     renderPriceChart();
     renderAdvancedIndicators();
+    renderMathEngine();
     return;
   }
   if (data.loading) {
@@ -30,6 +33,7 @@ export function renderIndicators() {
     renderPriceAction();
     renderPriceChart();
     renderAdvancedIndicators();
+    renderMathEngine();
     return;
   }
   if (data.error) {
@@ -37,6 +41,7 @@ export function renderIndicators() {
     renderPriceAction();
     renderPriceChart();
     renderAdvancedIndicators();
+    renderMathEngine();
     return;
   }
   const score = computeEntryScore(data);
@@ -90,4 +95,5 @@ export function renderIndicators() {
   renderPriceAction();
   renderPriceChart();
   renderAdvancedIndicators();
+  renderMathEngine();
 }
