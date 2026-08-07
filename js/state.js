@@ -1,7 +1,14 @@
 import { safeParseJSON } from './utils/storage.js';
 import { DEFAULT_FINNHUB_KEY } from './constants.js';
 
-export const sectionState = { tvNews: true, fhNews: true };
+export const sectionState = {
+  tvNews: true, fhNews: true,
+  'sec-quote': true, 'sec-chart': true, 'sec-watchlist': true,
+  'sec-indicators': true, 'sec-advind': true, 'sec-math': true, 'sec-prob': true,
+  'sec-smartmoney': true, 'sec-volume': true, 'sec-priceaction': true, 'sec-pricechart': true,
+  'sec-fundamental': true, 'sec-options': true, 'sec-risk': true,
+  'sec-sentiment': true, 'sec-central': true, 'sec-ai': true,
+};
 
 export function toggleSection(id) {
   sectionState[id] = !sectionState[id];
