@@ -8,6 +8,7 @@ import { fetchIndicators } from './services/alphaVantage.js';
 import { maybeFetchExtraNews } from './services/newsService.js';
 import { maybeFetchMacroData } from './services/macroData.js';
 import { fetchGEX } from './services/optionsEngine.js';
+import { renderRiskCard, calculateRiskResults } from './ui/riskCard.js';
 import { fetchAIAnalysis, translateNews } from './services/aiProxy.js';
 import { renderQuote, shareSymbol } from './ui/quoteCard.js';
 import { renderIndicators } from './ui/indicatorsCard.js';
@@ -38,6 +39,7 @@ function selectSymbol(symbol) {
   renderAIAnalysis();
   renderFundamentalCard();
   renderOptionsCard();
+  renderRiskCard();
 }
 
 async function scanWatchlist() {
@@ -166,6 +168,7 @@ window.scanWatchlist = scanWatchlist;
 window.translateNews = translateNews;
 window.fetchAIAnalysis = fetchAIAnalysis;
 window.fetchGEX = fetchGEX;
+window.calculateRisk = calculateRiskResults;
 
 showMain();
 applySection('tvNews');
@@ -180,4 +183,5 @@ renderAIAnalysis();
 renderFundamentalCard();
 maybeFetchMacroData();
 renderOptionsCard();
+renderRiskCard();
 startAutoRefresh();
