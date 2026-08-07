@@ -18,7 +18,8 @@ function renderEarningsSection(symbol) {
   if (!earnings || earnings.length === 0) {
     return `<div class="dim" style="font-size:13px; margin-bottom:6px;">Sin datos de resultados trimestrales disponibles para ${symbol}.</div>`;
   }
-  const recent = earnings.slice(0, 4);
+  const sorted = earnings.slice().sort((a, b) => (b.period || '').localeCompare(a.period || ''));
+  const recent = sorted.slice(0, 4);
   return recent.map((e) => {
     const surprise = e.surprisePercent;
     const beat = surprise != null && surprise > 0;
