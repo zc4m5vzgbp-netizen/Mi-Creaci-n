@@ -10,6 +10,7 @@ import { computeLinearRegression, computeHistoricalVolatility, computeWeightedMo
 import { computeDirectionalProbability } from '../analysis/probabilityEngine.js';
 import { detectOrderBlocks, detectFairValueGaps, detectStructureBreak, detectLiquidityGrabs, detectEqualLevels, computePremiumDiscount } from '../analysis/smartMoney.js';
 import { computeAbnormalVolume, computeAccumDistLine, computeApproxDelta, detectVolumeClimax, detectAbsorption, computeApproxVolumeProfile } from '../analysis/volumeEngine.js';
+import { computeVolatilityRegime, computeTrendSentiment } from '../analysis/sentimentEngine.js';
 import { renderIndicators } from '../ui/indicatorsCard.js';
 import { renderWatchlist } from '../ui/watchlist.js';
 
@@ -69,11 +70,22 @@ export async function fetchIndicators(symbol, force) {
       volumeProfile: computeApproxVolumeProfile(ohlc, volumes, 90, 10),
     };
 
+    const adxValue = computeADX(highs, lows, closes, 14);
+    const superTrendValue = computeSuperTrend(highs, lows, closes, 10, 3);
+    const sma50Value = computeSMA(closes, 50);
+    const sentiment = {
+      trend: computeTrendSentiment({
+        adx: adxValue, superTrend: superTrendValue, sma50: sma50Value, ema200: ema200,
+        lastClose: lastCloseValue, structure: smartMoney.structure,
+      }),
+      volatilityRegime: computeVolatilityRegime(closes),
+    };
+
     state.indicatorsCache[symbol] = {
       loading: false, error: null, fetchedDate: today,
       lastClose: lastCloseValue,
       sma20: computeSMA(closes, 20),
-      sma50: computeSMA(closes, 50),
+      sma50: sma50Value,
       ema200: ema200,
       rsi14: computeRSI(closes, 14),
       macd: macd,
@@ -88,12 +100,12 @@ export async function fetchIndicators(symbol, force) {
       recentEngulfingCount: engulfingMarkers.length,
       lastEngulfingType: lastEngulfing ? (lastEngulfing.text) : null,
       atr14: atr14Value,
-      adx: computeADX(highs, lows, closes, 14),
+      adx: adxValue,
       bollinger: computeBollinger(closes, 20, 2),
       stochastic: computeStochastic(highs, lows, closes, 14, 3),
       donchian: computeDonchian(highs, lows, 20),
       ichimoku: computeIchimoku(highs, lows, closes),
-      superTrend: computeSuperTrend(highs, lows, closes, 10, 3),
+      superTrend: superTrendValue,
       pivotPoints: pivotPoints,
       fibonacci: fibonacciValue,
       linearRegression: computeLinearRegression(closes, 20),
@@ -105,6 +117,7 @@ export async function fetchIndicators(symbol, force) {
       directionalProbability: computeDirectionalProbability(closes, 5, 2),
       smartMoney: smartMoney,
       volumeEngine: volumeEngine,
+      sentiment: sentiment,
     };
     safeSetItem('indicators_cache', JSON.stringify(state.indicatorsCache));
   } catch (e) {
