@@ -19,6 +19,7 @@ export async function fetchSymbol(symbol) {
     let name = (existing && existing.name) || symbol;
     let exchange = (existing && existing.exchange) || null;
     let industry = (existing && existing.industry) || null;
+    let logo = (existing && existing.logo) || null;
     let marketCap = existing && existing.marketCap;
     let peTTM = existing && existing.peTTM;
     let earnings = existing && existing.earnings;
@@ -32,6 +33,7 @@ export async function fetchSymbol(symbol) {
             if (p.name) name = p.name;
             if (p.exchange) exchange = p.exchange;
             if (p.finnhubIndustry) industry = p.finnhubIndustry;
+            if (p.logo) logo = p.logo;
           }
         }
       } catch (e) {}
@@ -55,7 +57,7 @@ export async function fetchSymbol(symbol) {
     }
 
     state.cache[symbol] = {
-      loading: false, error: null, name, exchange, industry, marketCap, peTTM, earnings,
+      loading: false, error: null, name, exchange, industry, logo, marketCap, peTTM, earnings,
       price: q.c, changeAbs: q.d ?? 0, changePct: q.dp ?? 0,
       open: q.o, high: q.h, low: q.l, prevClose: q.pc,
     };
