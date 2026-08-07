@@ -3,6 +3,7 @@ import { state } from '../state.js';
 import { fmtPrice, timeAgo, escapeHTML } from '../utils/format.js';
 import { extractJSONArray } from '../utils/dom.js';
 import { renderExtraNews } from '../ui/newsCards.js';
+import { renderSentimentCard } from '../ui/sentimentCard.js';
 
 export async function translateNews(symbol) {
   if (!state.aiProxyUrl || !state.aiProxyPassword) return;
@@ -30,6 +31,7 @@ export async function translateNews(symbol) {
     });
     newsData.translations = translations;
     if (statusEl) statusEl.textContent = '';
+    renderSentimentCard();
     renderExtraNews();
   } catch (e) {
     if (statusEl) statusEl.textContent = 'No se pudo traducir. Intenta de nuevo.';
