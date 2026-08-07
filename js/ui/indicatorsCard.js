@@ -9,6 +9,7 @@ import { renderPriceChart } from './priceChart.js';
 import { renderAdvancedIndicators } from './advancedIndicatorsCard.js';
 import { renderMathEngine } from './mathEngineCard.js';
 import { renderProbabilityEngine } from './probabilityCard.js';
+import { renderSmartMoney } from './smartMoneyCard.js';
 
 export function renderIndicators() {
   const card = document.getElementById('indicatorsCard');
@@ -19,6 +20,7 @@ export function renderIndicators() {
     renderAdvancedIndicators();
     renderMathEngine();
     renderProbabilityEngine();
+    renderSmartMoney();
     return;
   }
   const data = state.indicatorsCache[state.selected];
@@ -29,6 +31,7 @@ export function renderIndicators() {
     renderAdvancedIndicators();
     renderMathEngine();
     renderProbabilityEngine();
+    renderSmartMoney();
     return;
   }
   if (data.loading) {
@@ -38,6 +41,7 @@ export function renderIndicators() {
     renderAdvancedIndicators();
     renderMathEngine();
     renderProbabilityEngine();
+    renderSmartMoney();
     return;
   }
   if (data.error) {
@@ -47,6 +51,7 @@ export function renderIndicators() {
     renderAdvancedIndicators();
     renderMathEngine();
     renderProbabilityEngine();
+    renderSmartMoney();
     return;
   }
   const score = computeEntryScore(data);
@@ -102,4 +107,5 @@ export function renderIndicators() {
   renderAdvancedIndicators();
   renderMathEngine();
   renderProbabilityEngine();
+  renderSmartMoney();
 }
