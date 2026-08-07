@@ -3,6 +3,7 @@ import { state } from '../state.js';
 import { fetchWithRetry } from '../utils/dom.js';
 import { renderQuote } from '../ui/quoteCard.js';
 import { renderWatchlist, renderTicker } from '../ui/watchlist.js';
+import { renderFundamentalCard } from '../ui/fundamentalCard.js';
 
 export async function fetchSymbol(symbol) {
   const existing = state.cache[symbol];
@@ -20,6 +21,7 @@ export async function fetchSymbol(symbol) {
     let industry = (existing && existing.industry) || null;
     let marketCap = existing && existing.marketCap;
     let peTTM = existing && existing.peTTM;
+    let earnings = existing && existing.earnings;
 
     if (!hasProfile) {
       try {
@@ -43,15 +45,22 @@ export async function fetchSymbol(symbol) {
           }
         }
       } catch (e) {}
+      try {
+        const eRes = await fetchWithRetry(`${API_BASE}/stock/earnings?symbol=${encodeURIComponent(symbol)}&token=${state.apiKey}`);
+        if (eRes.ok) {
+          const eData = await eRes.json();
+          if (Array.isArray(eData)) earnings = eData;
+        }
+      } catch (e) {}
     }
 
     state.cache[symbol] = {
-      loading: false, error: null, name, exchange, industry, marketCap, peTTM,
+      loading: false, error: null, name, exchange, industry, marketCap, peTTM, earnings,
       price: q.c, changeAbs: q.d ?? 0, changePct: q.dp ?? 0,
       open: q.o, high: q.h, low: q.l, prevClose: q.pc,
     };
   } catch (e) {
     state.cache[symbol] = Object.assign({}, state.cache[symbol], { loading: false, error: e.message || 'Error de conexión' });
   }
-  renderQuote(); renderWatchlist(); renderTicker();
+  renderQuote(); renderWatchlist(); renderTicker(); renderFundamentalCard();
 }
