@@ -6,6 +6,7 @@ import { computeSMA, computeMACD, computeRSI, computeEMASeries } from '../analys
 import { computePriceAction, detectEngulfingMarkers } from '../analysis/priceAction.js';
 import { computeATR, computeADX, computeBollinger, computeStochastic, computeDonchian, computeIchimoku, computeSuperTrend } from '../analysis/advancedIndicators.js';
 import { computePivotPoints, computeFibonacci } from '../analysis/priceLevels.js';
+import { computeLinearRegression, computeHistoricalVolatility, computeWeightedMovingAverage, computePricePercentile, computeTargetZones, computePriceVolumeElasticity } from '../analysis/mathEngine.js';
 import { renderIndicators } from '../ui/indicatorsCard.js';
 import { renderWatchlist } from '../ui/watchlist.js';
 
@@ -41,10 +42,12 @@ export async function fetchIndicators(symbol, force) {
     const ema200 = ema200Series.length ? ema200Series[ema200Series.length - 1] : null;
     const prevIdx = closes.length - 2;
     const pivotPoints = prevIdx >= 0 ? computePivotPoints(highs[prevIdx], lows[prevIdx], closes[prevIdx]) : null;
+    const atr14Value = computeATR(highs, lows, closes, 14);
+    const lastCloseValue = closes[closes.length - 1];
 
     state.indicatorsCache[symbol] = {
       loading: false, error: null, fetchedDate: today,
-      lastClose: closes[closes.length - 1],
+      lastClose: lastCloseValue,
       sma20: computeSMA(closes, 20),
       sma50: computeSMA(closes, 50),
       ema200: ema200,
@@ -60,7 +63,7 @@ export async function fetchIndicators(symbol, force) {
       ohlc: ohlc,
       recentEngulfingCount: engulfingMarkers.length,
       lastEngulfingType: lastEngulfing ? (lastEngulfing.text) : null,
-      atr14: computeATR(highs, lows, closes, 14),
+      atr14: atr14Value,
       adx: computeADX(highs, lows, closes, 14),
       bollinger: computeBollinger(closes, 20, 2),
       stochastic: computeStochastic(highs, lows, closes, 14, 3),
@@ -69,6 +72,12 @@ export async function fetchIndicators(symbol, force) {
       superTrend: computeSuperTrend(highs, lows, closes, 10, 3),
       pivotPoints: pivotPoints,
       fibonacci: computeFibonacci(highs, lows, 90),
+      linearRegression: computeLinearRegression(closes, 20),
+      volatility: computeHistoricalVolatility(closes, 20),
+      wma20: computeWeightedMovingAverage(closes, 20),
+      pricePercentile: computePricePercentile(closes, lastCloseValue),
+      targetZones: computeTargetZones(lastCloseValue, atr14Value),
+      priceVolumeElasticity: computePriceVolumeElasticity(closes, volumes, 30),
     };
     safeSetItem('indicators_cache', JSON.stringify(state.indicatorsCache));
   } catch (e) {
