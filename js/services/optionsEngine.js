@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { safeSetItem } from '../utils/storage.js';
 import { renderOptionsCard } from '../ui/optionsCard.js';
+import { renderCentralCard } from '../ui/centralCard.js';
 
 // GEX real vía FlashAlpha, a través del Worker. Solo 5 consultas gratis al día
 // EN TOTAL (no por acción), así que esto nunca se pide automáticamente —
@@ -27,4 +28,5 @@ export async function fetchGEX(symbol) {
     state.gexCache[symbol] = { loading: false, error: e.message || 'Error al consultar los niveles de opciones.' };
   }
   renderOptionsCard();
+  renderCentralCard();
 }
