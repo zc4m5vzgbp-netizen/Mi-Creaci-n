@@ -9,6 +9,7 @@ import { computePivotPoints, computeFibonacci } from '../analysis/priceLevels.js
 import { computeLinearRegression, computeHistoricalVolatility, computeWeightedMovingAverage, computePricePercentile, computeTargetZones, computePriceVolumeElasticity } from '../analysis/mathEngine.js';
 import { computeDirectionalProbability } from '../analysis/probabilityEngine.js';
 import { detectOrderBlocks, detectFairValueGaps, detectStructureBreak, detectLiquidityGrabs, detectEqualLevels, computePremiumDiscount } from '../analysis/smartMoney.js';
+import { computeAbnormalVolume, computeAccumDistLine, computeApproxDelta, detectVolumeClimax, detectAbsorption, computeApproxVolumeProfile } from '../analysis/volumeEngine.js';
 import { renderIndicators } from '../ui/indicatorsCard.js';
 import { renderWatchlist } from '../ui/watchlist.js';
 
@@ -57,6 +58,17 @@ export async function fetchIndicators(symbol, force) {
       premiumDiscount: fibonacciValue ? computePremiumDiscount(lastCloseValue, fibonacciValue.high, fibonacciValue.low) : null,
     };
 
+    const abnormalVolume = computeAbnormalVolume(volumes, 20);
+    const avgVolume20Value = computeSMA(volumes, 20);
+    const volumeEngine = {
+      abnormal: abnormalVolume,
+      accumDist: computeAccumDistLine(ohlc, volumes, 20),
+      approxDelta: computeApproxDelta(ohlc, volumes),
+      climax: detectVolumeClimax(closes, abnormalVolume, 10),
+      absorption: detectAbsorption(ohlc, highs, lows, volumes[volumes.length - 1], avgVolume20Value, 20),
+      volumeProfile: computeApproxVolumeProfile(ohlc, volumes, 90, 10),
+    };
+
     state.indicatorsCache[symbol] = {
       loading: false, error: null, fetchedDate: today,
       lastClose: lastCloseValue,
@@ -71,7 +83,7 @@ export async function fetchIndicators(symbol, force) {
       historyDays: closes.length,
       priceAction: computePriceAction(closes, highs, lows, closes[closes.length - 1]),
       todayVolume: volumes[volumes.length - 1],
-      avgVolume20: computeSMA(volumes, 20),
+      avgVolume20: avgVolume20Value,
       ohlc: ohlc,
       recentEngulfingCount: engulfingMarkers.length,
       lastEngulfingType: lastEngulfing ? (lastEngulfing.text) : null,
@@ -92,6 +104,7 @@ export async function fetchIndicators(symbol, force) {
       priceVolumeElasticity: computePriceVolumeElasticity(closes, volumes, 30),
       directionalProbability: computeDirectionalProbability(closes, 5, 2),
       smartMoney: smartMoney,
+      volumeEngine: volumeEngine,
     };
     safeSetItem('indicators_cache', JSON.stringify(state.indicatorsCache));
   } catch (e) {
