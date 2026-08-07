@@ -7,6 +7,7 @@ import { fetchSymbol } from './services/finnhub.js';
 import { fetchIndicators } from './services/alphaVantage.js';
 import { maybeFetchExtraNews } from './services/newsService.js';
 import { maybeFetchMacroData } from './services/macroData.js';
+import { fetchGEX } from './services/optionsEngine.js';
 import { fetchAIAnalysis, translateNews } from './services/aiProxy.js';
 import { renderQuote, shareSymbol } from './ui/quoteCard.js';
 import { renderIndicators } from './ui/indicatorsCard.js';
@@ -14,6 +15,7 @@ import { renderAIAnalysis } from './ui/aiCard.js';
 import { renderChartWidget, renderNewsWidget } from './ui/newsCards.js';
 import { renderWatchlist, renderTicker } from './ui/watchlist.js';
 import { renderFundamentalCard } from './ui/fundamentalCard.js';
+import { renderOptionsCard } from './ui/optionsCard.js';
 
 function toggleWatch(symbol) {
   const has = state.watchlist.includes(symbol);
@@ -35,6 +37,7 @@ function selectSymbol(symbol) {
   maybeFetchExtraNews(symbol);
   renderAIAnalysis();
   renderFundamentalCard();
+  renderOptionsCard();
 }
 
 async function scanWatchlist() {
@@ -162,6 +165,7 @@ window.fetchIndicators = fetchIndicators;
 window.scanWatchlist = scanWatchlist;
 window.translateNews = translateNews;
 window.fetchAIAnalysis = fetchAIAnalysis;
+window.fetchGEX = fetchGEX;
 
 showMain();
 applySection('tvNews');
@@ -175,4 +179,5 @@ maybeFetchExtraNews(state.selected);
 renderAIAnalysis();
 renderFundamentalCard();
 maybeFetchMacroData();
+renderOptionsCard();
 startAutoRefresh();
