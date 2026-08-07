@@ -8,6 +8,7 @@ import { renderPriceAction } from './priceActionCard.js';
 import { renderPriceChart } from './priceChart.js';
 import { renderAdvancedIndicators } from './advancedIndicatorsCard.js';
 import { renderMathEngine } from './mathEngineCard.js';
+import { renderProbabilityEngine } from './probabilityCard.js';
 
 export function renderIndicators() {
   const card = document.getElementById('indicatorsCard');
@@ -17,6 +18,7 @@ export function renderIndicators() {
     renderPriceChart();
     renderAdvancedIndicators();
     renderMathEngine();
+    renderProbabilityEngine();
     return;
   }
   const data = state.indicatorsCache[state.selected];
@@ -26,6 +28,7 @@ export function renderIndicators() {
     renderPriceChart();
     renderAdvancedIndicators();
     renderMathEngine();
+    renderProbabilityEngine();
     return;
   }
   if (data.loading) {
@@ -34,6 +37,7 @@ export function renderIndicators() {
     renderPriceChart();
     renderAdvancedIndicators();
     renderMathEngine();
+    renderProbabilityEngine();
     return;
   }
   if (data.error) {
@@ -42,6 +46,7 @@ export function renderIndicators() {
     renderPriceChart();
     renderAdvancedIndicators();
     renderMathEngine();
+    renderProbabilityEngine();
     return;
   }
   const score = computeEntryScore(data);
@@ -96,4 +101,5 @@ export function renderIndicators() {
   renderPriceChart();
   renderAdvancedIndicators();
   renderMathEngine();
+  renderProbabilityEngine();
 }
