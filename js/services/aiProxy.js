@@ -4,6 +4,10 @@ import { fmtPrice, timeAgo, escapeHTML } from '../utils/format.js';
 import { extractJSONArray } from '../utils/dom.js';
 import { renderExtraNews } from '../ui/newsCards.js';
 import { renderSentimentCard } from '../ui/sentimentCard.js';
+import { renderCentralCard } from '../ui/centralCard.js';
+import { computeNewsSentimentTally, computeOverallSentiment } from '../analysis/sentimentEngine.js';
+import { computeMomentumScore, computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeSentimentScoreFromVolatility, computeCentralScore } from '../analysis/centralEngine.js';
+import { computeYoY } from '../ui/fundamentalCard.js';
 
 export async function translateNews(symbol) {
   if (!state.aiProxyUrl || !state.aiProxyPassword) return;
@@ -32,6 +36,7 @@ export async function translateNews(symbol) {
     newsData.translations = translations;
     if (statusEl) statusEl.textContent = '';
     renderSentimentCard();
+    renderCentralCard();
     renderExtraNews();
   } catch (e) {
     if (statusEl) statusEl.textContent = 'No se pudo traducir. Intenta de nuevo.';
@@ -113,6 +118,71 @@ export async function fetchAIAnalysis(symbol) {
     if (ind.recentEngulfingCount != null) {
       priceLines.push(`Patrones de velas Engulfing detectados matemáticamente en los últimos ${CHART_DISPLAY_DAYS} días: ${ind.recentEngulfingCount} (el más reciente: ${ind.lastEngulfingType || 'ninguno reciente'})`);
     }
+    if (ind.adx) priceLines.push(`ADX: ${ind.adx.adx.toFixed(1)} (fuerza de tendencia; ${ind.adx.plusDI > ind.adx.minusDI ? 'sesgo alcista' : 'sesgo bajista'} según DI+/DI-)`);
+    if (ind.superTrend) priceLines.push(`SuperTrend: ${ind.superTrend.direction}`);
+    if (ind.smartMoney) {
+      const sm = ind.smartMoney;
+      if (sm.structure) {
+        priceLines.push(`Estructura de mercado (Smart Money): ${sm.structure.structure}${sm.structure.event ? `, con un ${sm.structure.event.type} reciente (${sm.structure.event.direction})` : ', sin rompimiento de estructura reciente'}`);
+      }
+      if (sm.premiumDiscount) {
+        priceLines.push(`Zona premium/discount (Smart Money): el precio está en ${sm.premiumDiscount.zone} de su rango de ~90 días (${sm.premiumDiscount.positionPct.toFixed(0)}%)`);
+      }
+      if (sm.fairValueGaps && sm.fairValueGaps.length > 0) {
+        priceLines.push(`Fair Value Gaps sin llenar detectados: ${sm.fairValueGaps.length}`);
+      }
+    }
+    if (ind.volumeEngine) {
+      const v = ind.volumeEngine;
+      if (v.abnormal) priceLines.push(`Volumen de hoy: ${v.abnormal.level} (comparado estadísticamente con los últimos 20 días)`);
+      if (v.accumDist) priceLines.push(`Acumulación/Distribución (indicador real, no aproximado): ${v.accumDist.trend}`);
+      if (v.climax) priceLines.push(`${v.climax.type} detectado: ${v.climax.desc}`);
+      if (v.absorption && v.absorption.detected) priceLines.push(`Absorción detectada: ${v.absorption.desc}`);
+    }
+    if (ind.directionalProbability) {
+      const dp = ind.directionalProbability;
+      priceLines.push(`Probabilidad histórica REAL (Motor de Probabilidades, contada sobre ${dp.sample} configuraciones parecidas del pasado — no inventada): ${dp.upPct.toFixed(0)}% de las veces subió, ${dp.flatPct.toFixed(0)}% consolidó, ${dp.downPct.toFixed(0)}% bajó, en los siguientes ${dp.lookAheadDays} días de cotización`);
+    }
+
+    const newsDataForSentiment = state.newsCache[symbol];
+    const newsTallyForSentiment = computeNewsSentimentTally(newsDataForSentiment);
+    if (ind.sentiment) {
+      const overall = computeOverallSentiment(ind.sentiment.trend, ind.sentiment.volatilityRegime, newsTallyForSentiment);
+      priceLines.push(`Sentimiento general calculado (combinando tendencia, volatilidad y noticias): ${overall.label} (${overall.score.toFixed(0)}/100)`);
+    }
+
+    const gexForPrompt = state.gexCache[symbol];
+    if (gexForPrompt && !gexForPrompt.loading && !gexForPrompt.error) {
+      priceLines.push(`Opciones — Call Wall (resistencia real de opciones): $${fmtPrice(gexForPrompt.callWall)}, Put Wall (soporte real de opciones): $${fmtPrice(gexForPrompt.putWall)}`);
+    }
+
+    if (q.earnings && q.earnings.length > 0) {
+      const sortedEarnings = q.earnings.slice().sort((a, b) => (b.period || '').localeCompare(a.period || ''));
+      const lastE = sortedEarnings[0];
+      if (lastE && lastE.actual != null && lastE.estimate != null) {
+        priceLines.push(`Último resultado trimestral (${lastE.period}): EPS real ${lastE.actual} vs. estimado ${lastE.estimate} (${lastE.surprisePercent != null ? (lastE.surprisePercent > 0 ? 'superó' : 'no alcanzó') + ' expectativas por ' + Math.abs(lastE.surprisePercent).toFixed(1) + '%' : ''})`);
+      }
+    }
+    if (state.macroCache && state.macroCache.data && !state.macroCache.loading && !state.macroCache.error) {
+      const md = state.macroCache.data;
+      const cpi = computeYoY(md.cpi, 12);
+      const fedRate = md.fedRate && md.fedRate[0] ? parseFloat(md.fedRate[0].value) : null;
+      if (cpi) priceLines.push(`Contexto macro general (no específico de esta acción): CPI interanual ${cpi.yoyPct.toFixed(1)}%${fedRate != null ? `, tasa de la Reserva Federal ${fedRate.toFixed(2)}%` : ''}`);
+    }
+
+    const centralInputs = {
+      trendScore: ind.sentiment && ind.sentiment.trend && ind.sentiment.trend.total > 0 ? ind.sentiment.trend.bullishPct : null,
+      momentumScore: computeMomentumScore(ind),
+      volumeScore: computeVolumeScore(ind),
+      newsScore: computeNewsScore(newsTallyForSentiment),
+      optionsScore: computeOptionsScoreFromWalls(gexForPrompt, ind.lastClose),
+      sentimentScore: computeSentimentScoreFromVolatility(ind.sentiment ? ind.sentiment.volatilityRegime : null),
+    };
+    const central = computeCentralScore(centralInputs);
+    if (central) {
+      const dimLines = Object.entries(central.dims).map(([k, v]) => `${k}: ${Math.round(v)}/100`).join(', ');
+      priceLines.push(`Motor Central (promedio de ${central.dimCount} de 6 dimensiones, calculado matemáticamente — no inventado): puntaje general ${Math.round(central.avgScore)}/100, nivel de confianza ${central.confidence}% (más alto cuando los motores coinciden entre sí, más bajo cuando se contradicen). Desglose: ${dimLines}.`);
+    }
   } else {
     priceLines.push('(Sin indicadores ni zonas de precio disponibles todavía — solo hay precio en vivo)');
   }
@@ -124,7 +194,18 @@ export async function fetchAIAnalysis(symbol) {
     });
   }
 
-  const prompt = `Eres un analista financiero que le habla a un amigo en español, de forma natural, cálida y directa, sin jerga innecesaria ni frases robóticas. Tu ENFOQUE PRINCIPAL debe ser la acción del precio: la tendencia de varios días, el momentum, el volumen, las zonas de soporte/demanda y resistencia/oferta, y si hubo patrones de velas Engulfing recientes. Te doy también probabilidades de rebote YA CALCULADAS matemáticamente sobre el historial real — úsalas tal cual te las doy, NO inventes tus propios porcentajes ni los cambies. Si no hay suficiente muestra histórica para una zona, dilo claramente en vez de inventar un número. Dedica la mayor parte del análisis (3-4 párrafos) a esto. Datos de precio y técnicos reales de hoy:\n\n${priceLines.join('\n')}\n\n${newsLines.length ? `Al final, en un párrafo corto y aparte, menciona si estas noticias reales recientes ayudan a explicar lo que ves en el precio (sin inventar nada que no esté aquí):\n${newsLines.join('\n')}` : 'No hay noticias recientes cargadas — no las menciones.'}\n\nSé honesto si la señal es mixta o si falta información, y nunca des una instrucción de "compra" o "vende", solo describe el panorama para que la persona decida por su cuenta.`;
+  const prompt = `Eres un analista financiero institucional que le explica su análisis a un cliente en español, de forma natural, clara y directa, sin jerga innecesaria ni frases robóticas. Tienes acceso a datos reales de precio, indicadores técnicos, zonas de oferta/demanda, estructura de mercado (Smart Money), volumen, probabilidades históricas reales, sentimiento calculado, contexto fundamental/macro, opciones, y un Motor Central que ya combinó varias señales en puntajes — TODO esto ya viene calculado matemáticamente, tú NO debes inventar ni recalcular ningún número, solo interpretarlos y explicarlos.
+
+Estructura tu respuesta en estos bloques, con encabezados cortos:
+1. Qué está ocurriendo — resumen del panorama actual en 2-3 frases.
+2. Qué variables coinciden — qué señales apuntan en la misma dirección entre sí.
+3. Qué variables generan conflicto — qué señales se contradicen entre sí, y sé honesto si la imagen es mixta.
+4. Qué riesgos existen — con base en los datos reales que tienes (volatilidad, resistencias cercanas, contexto macro, etc.).
+5. Qué escenarios son más probables — usando las probabilidades históricas reales que te doy, no una predicción tuya.
+
+Nunca dés una instrucción de "compra" o "vende" — solo describe el panorama para que la persona decida por su cuenta. Si falta información en alguna de las cinco partes, dilo claramente en vez de rellenar con algo inventado.
+
+Datos reales de hoy para ${symbol}:\n\n${priceLines.join('\n')}\n\n${newsLines.length ? `Noticias reales recientes (menciona si ayudan a explicar lo que ves, sin inventar nada que no esté aquí):\n${newsLines.join('\n')}` : 'No hay noticias recientes cargadas — no las menciones.'}`;
 
   try {
     const res = await fetch(state.aiProxyUrl, {
