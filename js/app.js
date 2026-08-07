@@ -76,6 +76,16 @@ function showMain() {
   document.getElementById('gearBtn').style.display = 'inline-block';
 }
 
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+  document.querySelectorAll('.bottom-tab-btn').forEach((b) => b.classList.remove('active'));
+  const panel = document.getElementById('tab-' + tabId);
+  const btn = document.getElementById('tabbtn-' + tabId);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
 function startAutoRefresh() {
   setInterval(() => {
     if (document.visibilityState !== 'visible') return;
@@ -169,6 +179,7 @@ window.translateNews = translateNews;
 window.fetchAIAnalysis = fetchAIAnalysis;
 window.fetchGEX = fetchGEX;
 window.calculateRisk = calculateRiskResults;
+window.switchTab = switchTab;
 
 showMain();
 applySection('tvNews');
