@@ -7,6 +7,7 @@ import { computePriceAction, detectEngulfingMarkers } from '../analysis/priceAct
 import { computeATR, computeADX, computeBollinger, computeStochastic, computeDonchian, computeIchimoku, computeSuperTrend } from '../analysis/advancedIndicators.js';
 import { computePivotPoints, computeFibonacci } from '../analysis/priceLevels.js';
 import { computeLinearRegression, computeHistoricalVolatility, computeWeightedMovingAverage, computePricePercentile, computeTargetZones, computePriceVolumeElasticity } from '../analysis/mathEngine.js';
+import { computeDirectionalProbability } from '../analysis/probabilityEngine.js';
 import { renderIndicators } from '../ui/indicatorsCard.js';
 import { renderWatchlist } from '../ui/watchlist.js';
 
@@ -78,6 +79,7 @@ export async function fetchIndicators(symbol, force) {
       pricePercentile: computePricePercentile(closes, lastCloseValue),
       targetZones: computeTargetZones(lastCloseValue, atr14Value),
       priceVolumeElasticity: computePriceVolumeElasticity(closes, volumes, 30),
+      directionalProbability: computeDirectionalProbability(closes, 5, 2),
     };
     safeSetItem('indicators_cache', JSON.stringify(state.indicatorsCache));
   } catch (e) {
