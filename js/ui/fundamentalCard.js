@@ -4,7 +4,7 @@ function row(label, caption, valueHtml, signalClass) {
   return `<div class="indicator-row"><div><div class="indicator-label">${label}</div><div class="indicator-caption">${caption}</div></div><div style="text-align:right;"><div class="mono ${signalClass}" style="font-size:13px;">${valueHtml}</div></div></div>`;
 }
 
-function computeYoY(observations, periodsBack) {
+export function computeYoY(observations, periodsBack) {
   if (!observations || observations.length <= periodsBack) return null;
   const latest = parseFloat(observations[0].value);
   const prior = parseFloat(observations[periodsBack].value);
