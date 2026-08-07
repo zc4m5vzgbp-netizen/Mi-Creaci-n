@@ -13,6 +13,7 @@ import { renderSmartMoney } from './smartMoneyCard.js';
 import { renderVolumeEngine } from './volumeEngineCard.js';
 import { renderSentimentCard } from './sentimentCard.js';
 import { renderCentralCard } from './centralCard.js';
+import { renderLevelsLadder } from './levelsLadderCard.js';
 
 export function renderIndicators() {
   const card = document.getElementById('indicatorsCard');
@@ -27,6 +28,7 @@ export function renderIndicators() {
     renderVolumeEngine();
     renderSentimentCard();
     renderCentralCard();
+    renderLevelsLadder();
     return;
   }
   const data = state.indicatorsCache[state.selected];
@@ -41,6 +43,7 @@ export function renderIndicators() {
     renderVolumeEngine();
     renderSentimentCard();
     renderCentralCard();
+    renderLevelsLadder();
     return;
   }
   if (data.loading) {
@@ -54,6 +57,7 @@ export function renderIndicators() {
     renderVolumeEngine();
     renderSentimentCard();
     renderCentralCard();
+    renderLevelsLadder();
     return;
   }
   if (data.error) {
@@ -67,6 +71,7 @@ export function renderIndicators() {
     renderVolumeEngine();
     renderSentimentCard();
     renderCentralCard();
+    renderLevelsLadder();
     return;
   }
   const score = computeEntryScore(data);
@@ -126,4 +131,5 @@ export function renderIndicators() {
   renderVolumeEngine();
   renderSentimentCard();
   renderCentralCard();
+  renderLevelsLadder();
 }
