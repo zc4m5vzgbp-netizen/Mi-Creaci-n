@@ -1,8 +1,19 @@
 import { state } from '../state.js';
 import { fmtPrice } from '../utils/format.js';
 
-function ladderRow(label, price, cls) {
-  return `<div class="ladder-row"><span class="dim mono" style="font-size:10.5px;">${label}</span><span class="mono ${cls}" style="font-size:12px;">$${fmtPrice(price)}</span></div>`;
+function levelRow(level, isResistance, barPct, isNearest) {
+  const colorVar = isResistance ? 'var(--loss)' : 'var(--gain)';
+  const icon = isResistance ? '▲' : '▼';
+  const cls = isResistance ? 'tag-bad' : 'tag-good';
+  return `
+    <div class="level-row ${isNearest ? 'level-nearest' : ''}">
+      <div class="level-row-top">
+        <span class="dim mono" style="font-size:10px;">${icon} ${level.label}${isNearest ? ' · más cercano' : ''}</span>
+        <span class="mono ${cls}" style="font-size:12.5px; font-weight:600;">$${fmtPrice(level.price)}</span>
+      </div>
+      <div class="level-bar-track"><div class="level-bar-fill" style="width:${barPct}%; background:${colorVar};"></div></div>
+    </div>
+  `;
 }
 
 export function renderLevelsLadder() {
@@ -18,15 +29,31 @@ export function renderLevelsLadder() {
   const pp = data.pivotPoints;
   const price = data.lastClose;
 
+  const resistances = [{ label: 'R1', price: pp.r1 }, { label: 'R2', price: pp.r2 }, { label: 'R3', price: pp.r3 }];
+  const supports = [{ label: 'S1', price: pp.s1 }, { label: 'S2', price: pp.s2 }, { label: 'S3', price: pp.s3 }];
+  const allLevels = resistances.concat(supports);
+  const distances = allLevels.map((l) => Math.abs(l.price - price));
+  const maxDist = Math.max.apply(null, distances);
+  const minDist = Math.min.apply(null, distances);
+
+  function bar(level) {
+    const dist = Math.abs(level.price - price);
+    return maxDist > 0 ? Math.max(15, 100 * (1 - dist / maxDist)) : 100;
+  }
+  function nearest(level) {
+    return Math.abs(level.price - price) === minDist;
+  }
+
   card.innerHTML = `
-    <div class="toggle-label" style="margin-bottom:6px;">Niveles Clave</div>
-    ${ladderRow('R3', pp.r3, 'tag-bad')}
-    ${ladderRow('R2', pp.r2, 'tag-bad')}
-    ${ladderRow('R1', pp.r1, 'tag-bad')}
-    <div class="ladder-row ladder-current"><span class="mono" style="font-size:10.5px; font-weight:700;">AHORA</span><span class="mono" style="font-size:13px; font-weight:700;">$${fmtPrice(price)}</span></div>
-    ${ladderRow('S1', pp.s1, 'tag-good')}
-    ${ladderRow('S2', pp.s2, 'tag-good')}
-    ${ladderRow('S3', pp.s3, 'tag-good')}
-    <div class="dim" style="font-size:9px; margin-top:8px; line-height:1.3; font-style:italic;">Puntos Pivote clásicos, sobre el cierre de ayer.</div>
+    <div class="toggle-label" style="margin-bottom:8px;">Niveles Clave</div>
+    <div class="dim mono" style="font-size:9px; letter-spacing:1px; margin-bottom:4px;">RESISTENCIA</div>
+    ${resistances.slice().reverse().map((l) => levelRow(l, true, bar(l), nearest(l))).join('')}
+    <div class="level-current-row">
+      <span class="mono" style="font-size:10.5px; font-weight:700;">● AHORA</span>
+      <span class="mono" style="font-size:14px; font-weight:700;">$${fmtPrice(price)}</span>
+    </div>
+    <div class="dim mono" style="font-size:9px; letter-spacing:1px; margin:4px 0;">SOPORTE</div>
+    ${supports.map((l) => levelRow(l, false, bar(l), nearest(l))).join('')}
+    <div class="dim" style="font-size:9px; margin-top:8px; line-height:1.3; font-style:italic;">Puntos Pivote clásicos, sobre el cierre de ayer. La barra muestra qué tan cerca está cada nivel del precio actual.</div>
   `;
 }
