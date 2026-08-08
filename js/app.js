@@ -17,6 +17,7 @@ import { renderChartWidget, renderNewsWidget } from './ui/newsCards.js';
 import { renderWatchlist, renderTicker } from './ui/watchlist.js';
 import { renderFundamentalCard } from './ui/fundamentalCard.js';
 import { renderOptionsCard } from './ui/optionsCard.js';
+import { renderPerformanceCard } from './ui/performanceCard.js';
 
 function toggleWatch(symbol) {
   const has = state.watchlist.includes(symbol);
@@ -74,6 +75,11 @@ function showMain() {
   document.getElementById('settingsPanel').style.display = 'none';
   document.getElementById('mainPanel').style.display = 'block';
   document.getElementById('gearBtn').style.display = 'inline-block';
+}
+
+function selectPerformancePeriod(period) {
+  state.perfPeriod = period;
+  renderPerformanceCard();
 }
 
 function switchTab(tabId) {
@@ -180,6 +186,7 @@ window.fetchAIAnalysis = fetchAIAnalysis;
 window.fetchGEX = fetchGEX;
 window.calculateRisk = calculateRiskResults;
 window.switchTab = switchTab;
+window.selectPerformancePeriod = selectPerformancePeriod;
 
 showMain();
 applySection('tvNews');
