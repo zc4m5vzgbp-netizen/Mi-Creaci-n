@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { HISTORY_DAYS } from '../constants.js';
 
 export function renderProbabilityEngine() {
   const card = document.getElementById('probabilityCard');
@@ -35,6 +36,6 @@ export function renderProbabilityEngine() {
     <div class="indicator-row"><div class="indicator-label">Probabilidad de consolidar</div><div class="mono tag-neutral">${flat}%</div></div>
     <div class="indicator-row"><div class="indicator-label">Probabilidad de caer</div><div class="mono tag-bad">${down}%</div></div>
 
-    <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">"Subir" y "caer" significan un movimiento de más de ${prob.thresholdPct}% en los próximos ${prob.lookAheadDays} días de cotización, medido sobre tu historial real de ~400 días. Es frecuencia histórica, no una garantía de lo que va a pasar.</div>
+    <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">"Subir" y "caer" significan un movimiento de más de ${prob.thresholdPct}% en los próximos ${prob.lookAheadDays} días de cotización, medido sobre tu historial real de ~${HISTORY_DAYS} días. Es frecuencia histórica, no una garantía de lo que va a pasar.</div>
   `;
 }
