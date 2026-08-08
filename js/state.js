@@ -3,7 +3,7 @@ import { DEFAULT_FINNHUB_KEY } from './constants.js';
 
 export const sectionState = {
   tvNews: true, fhNews: true,
-  'sec-quote': true, 'sec-chart': true, 'sec-watchlist': true,
+  'sec-quote': true, 'sec-chart': true, 'sec-watchlist': true, 'sec-performance': true,
   'sec-indicators': true, 'sec-advind': true, 'sec-math': true, 'sec-prob': true,
   'sec-smartmoney': true, 'sec-volume': true, 'sec-priceaction': true, 'sec-pricechart': true,
   'sec-fundamental': true, 'sec-options': true, 'sec-risk': true,
@@ -38,4 +38,6 @@ export const state = {
   gexCache: safeParseJSON(localStorage.getItem('gex_cache'), {}),
   riskCapital: safeParseJSON(localStorage.getItem('risk_capital'), null),
   riskPct: safeParseJSON(localStorage.getItem('risk_pct'), 1),
+  perfPeriod: '1M',
+  perfPeriod: '1M',
 };
