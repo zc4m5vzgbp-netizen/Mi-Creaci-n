@@ -14,6 +14,7 @@ import { renderVolumeEngine } from './volumeEngineCard.js';
 import { renderSentimentCard } from './sentimentCard.js';
 import { renderCentralCard } from './centralCard.js';
 import { renderLevelsLadder } from './levelsLadderCard.js';
+import { renderPerformanceCard } from './performanceCard.js';
 
 export function renderIndicators() {
   const card = document.getElementById('indicatorsCard');
@@ -29,6 +30,7 @@ export function renderIndicators() {
     renderSentimentCard();
     renderCentralCard();
     renderLevelsLadder();
+    renderPerformanceCard();
     return;
   }
   const data = state.indicatorsCache[state.selected];
@@ -44,6 +46,7 @@ export function renderIndicators() {
     renderSentimentCard();
     renderCentralCard();
     renderLevelsLadder();
+    renderPerformanceCard();
     return;
   }
   if (data.loading) {
@@ -58,6 +61,7 @@ export function renderIndicators() {
     renderSentimentCard();
     renderCentralCard();
     renderLevelsLadder();
+    renderPerformanceCard();
     return;
   }
   if (data.error) {
@@ -72,6 +76,7 @@ export function renderIndicators() {
     renderSentimentCard();
     renderCentralCard();
     renderLevelsLadder();
+    renderPerformanceCard();
     return;
   }
   const score = computeEntryScore(data);
@@ -132,4 +137,5 @@ export function renderIndicators() {
   renderSentimentCard();
   renderCentralCard();
   renderLevelsLadder();
+  renderPerformanceCard();
 }
