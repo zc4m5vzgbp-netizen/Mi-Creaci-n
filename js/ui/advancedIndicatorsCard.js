@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { HISTORY_DAYS } from '../constants.js';
 import { fmtPrice, escapeHTML } from '../utils/format.js';
 
 function row(label, caption, valueHtml, signalClass, signalLabel) {
@@ -89,6 +90,6 @@ export function renderAdvancedIndicators() {
     ${rows.join('')}
     ${pivotHtml}
     ${fibHtml}
-    <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">Fórmulas estándar de análisis técnico sobre tu historial real de ~400 días. Ninguna de estas lecturas es una recomendación de inversión.</div>
+    <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">Fórmulas estándar de análisis técnico sobre tu historial real de ~${HISTORY_DAYS} días. Ninguna de estas lecturas es una recomendación de inversión.</div>
   `;
 }
