@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { HISTORY_DAYS } from '../constants.js';
 import { fmtPrice } from '../utils/format.js';
 
 function row(label, caption, valueHtml, signalClass, signalLabel) {
@@ -38,7 +39,7 @@ export function renderMathEngine() {
     let cls = 'tag-neutral', lbl = 'zona media';
     if (data.pricePercentile >= 80) { cls = 'tag-bad'; lbl = 'cerca del máximo de su rango'; }
     else if (data.pricePercentile <= 20) { cls = 'tag-good'; lbl = 'cerca del mínimo de su rango'; }
-    rows.push(row('Percentil del precio', 'Dónde está hoy dentro de todo su historial de ~400 días.', 'percentil ' + data.pricePercentile.toFixed(0), cls, lbl));
+    rows.push(row('Percentil del precio', `Dónde está hoy dentro de todo su historial de ~${HISTORY_DAYS} días.`, 'percentil ' + data.pricePercentile.toFixed(0), cls, lbl));
   }
 
   let targetHtml = '';
