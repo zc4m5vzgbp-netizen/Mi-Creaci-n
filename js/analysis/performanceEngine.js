@@ -1,5 +1,5 @@
 // Rendimiento por período — usa el mismo historial de Alpha Vantage que ya
-// tenemos (hasta 400 días). Los períodos se aproximan en días de cotización
+// tenemos (hasta 1000 días). Los períodos se aproximan en días de cotización
 // (no días de calendario), ya que así viene organizado el historial.
 
 const PERIOD_DAYS = { '1S': 5, '1M': 21, '3M': 63, '6M': 126, '1A': 252 };
