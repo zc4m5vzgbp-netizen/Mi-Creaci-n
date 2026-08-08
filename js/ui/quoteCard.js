@@ -2,6 +2,8 @@ import { state } from '../state.js';
 import { applySection, sectionState } from '../state.js';
 import { fmtPrice, fmtMarketCap, changeTagHTML, escapeHTML } from '../utils/format.js';
 
+let lastQuotePrice = {};
+
 export function shareSymbol(symbol) {
   const s = state.cache[symbol];
   const text = s && s.price != null ? `${symbol}: $${fmtPrice(s.price)} (${(s.changePct ?? 0) >= 0 ? '+' : ''}${(s.changePct ?? 0).toFixed(2)}%)` : symbol;
@@ -22,9 +24,13 @@ export function renderQuote() {
     const id = 'quickStats';
     if (sectionState[id] === undefined) sectionState[id] = true;
     const tags = [s.exchange ? `<span class="pill">${escapeHTML(s.exchange)}</span>` : '', s.industry ? `<span class="pill">${escapeHTML(s.industry)}</span>` : ''].filter(Boolean).join(' ');
+    let priceFlash = '';
+    const prevPrice = lastQuotePrice[state.selected];
+    if (prevPrice != null && prevPrice !== s.price) priceFlash = s.price > prevPrice ? 'price-flash-up' : 'price-flash-down';
+    lastQuotePrice[state.selected] = s.price;
     body = `
       ${tags ? `<div style="margin:2px 0 10px;">${tags}</div>` : ''}
-      <div class="quote-price">$${fmtPrice(s.price)}</div>
+      <div class="quote-price ${priceFlash}">$${fmtPrice(s.price)}</div>
       <div style="margin-top:4px;">${changeTagHTML(s.changePct, s.changeAbs, true)}</div>
       <div style="margin-top:14px; border-top:1px solid var(--hairline); padding-top:12px;">
         <button class="toggle-row" onclick="toggleSection('${id}')">
