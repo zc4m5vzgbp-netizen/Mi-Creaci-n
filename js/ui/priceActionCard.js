@@ -56,7 +56,7 @@ export function renderPriceAction() {
   }
   card.innerHTML = `
     <div class="card-title" style="margin-bottom:4px;">Zonas de oferta y demanda</div>
-    <div class="dim" style="font-size:11px; margin-bottom:10px;">Analizado sobre ~${HISTORY_DAYS} días de historial (~19 meses)</div>
+    <div class="dim" style="font-size:11px; margin-bottom:10px;">Analizado sobre ~${HISTORY_DAYS} días de historial (~${(HISTORY_DAYS / 252).toFixed(1)} años)</div>
     <div class="indicator-row" style="display:block;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
         <div><div class="indicator-label">Zona de oferta (resistencia) más cercana</div><div class="indicator-caption">${pa.nearestResistance ? pa.nearestResistance.touches + ' toques históricos como pivote' : 'No se encontró una clara arriba del precio actual'}</div></div>
