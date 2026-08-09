@@ -55,8 +55,8 @@ export function renderCentralCard() {
     ${scoreRow('Sentimiento', central.dims.sentimiento != null ? Math.round(central.dims.sentimiento) : null)}
     ${prob ? `
     <div style="border-top:1px solid var(--hairline); margin-top:10px; padding-top:10px;">
-      <div class="indicator-row"><div class="indicator-label">Probabilidad alcista (histórica real)</div><div class="mono tag-good">${prob.upPct.toFixed(0)}%</div></div>
-      <div class="indicator-row"><div class="indicator-label">Probabilidad bajista (histórica real)</div><div class="mono tag-bad">${prob.downPct.toFixed(0)}%</div></div>
+      <div class="indicator-row"><div class="indicator-label">Frecuencia histórica condicional alcista</div><div class="mono tag-good">${prob.upPct.toFixed(0)}%</div></div>
+      <div class="indicator-row"><div class="indicator-label">Frecuencia histórica condicional bajista</div><div class="mono tag-bad">${prob.downPct.toFixed(0)}%</div></div>
     </div>` : ''}
     <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">Puntaje calculado combinando reglas matemáticas de varios motores — no es una IA adivinando. Las dimensiones sin datos hoy (por ejemplo Opciones, si no consultaste GEX) no cuentan en el promedio. La confianza baja cuando los motores se contradicen entre sí.</div>
   `;
