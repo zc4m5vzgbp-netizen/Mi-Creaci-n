@@ -6,10 +6,10 @@ import { computeSMA, computeMACD, computeRSI, computeEMASeries } from '../analys
 import { computePriceAction, detectEngulfingMarkers } from '../analysis/priceAction.js';
 import { computeATR, computeADX, computeBollinger, computeStochastic, computeDonchian, computeIchimoku, computeSuperTrend } from '../analysis/advancedIndicators.js';
 import { computePivotPoints, computeFibonacci } from '../analysis/priceLevels.js';
-import { computeLinearRegression, computeHistoricalVolatility, computeWeightedMovingAverage, computePricePercentile, computeTargetZones, computePriceVolumeElasticity } from '../analysis/mathEngine.js';
+import { computeLinearRegression, computeHistoricalVolatility, computeWeightedMovingAverage, computePricePercentile, computeTargetZones } from '../analysis/mathEngine.js';
 import { computeDirectionalProbability } from '../analysis/probabilityEngine.js';
 import { detectOrderBlocks, detectFairValueGaps, detectStructureBreak, detectLiquidityGrabs, detectEqualLevels, computePremiumDiscount } from '../analysis/smartMoney.js';
-import { computeAbnormalVolume, computeAccumDistLine, computeApproxDelta, detectVolumeClimax, detectAbsorption, computeApproxVolumeProfile } from '../analysis/volumeEngine.js';
+import { computeAbnormalVolume, computeAccumDistLine, detectVolumeClimax, detectAbsorption } from '../analysis/volumeEngine.js';
 import { computeVolatilityRegime, computeTrendSentiment } from '../analysis/sentimentEngine.js';
 import { renderIndicators } from '../ui/indicatorsCard.js';
 import { renderWatchlist } from '../ui/watchlist.js';
@@ -64,10 +64,8 @@ export async function fetchIndicators(symbol, force) {
     const volumeEngine = {
       abnormal: abnormalVolume,
       accumDist: computeAccumDistLine(ohlc, volumes, 20),
-      approxDelta: computeApproxDelta(ohlc, volumes),
       climax: detectVolumeClimax(closes, abnormalVolume, 10),
       absorption: detectAbsorption(ohlc, highs, lows, volumes[volumes.length - 1], avgVolume20Value, 20),
-      volumeProfile: computeApproxVolumeProfile(ohlc, volumes, 90, 10),
     };
 
     const adxValue = computeADX(highs, lows, closes, 14);
@@ -113,7 +111,6 @@ export async function fetchIndicators(symbol, force) {
       wma20: computeWeightedMovingAverage(closes, 20),
       pricePercentile: computePricePercentile(closes, lastCloseValue),
       targetZones: computeTargetZones(lastCloseValue, atr14Value),
-      priceVolumeElasticity: computePriceVolumeElasticity(closes, volumes, 30),
       directionalProbability: computeDirectionalProbability(closes, 5, 2),
       smartMoney: smartMoney,
       volumeEngine: volumeEngine,
