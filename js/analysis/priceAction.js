@@ -1,3 +1,5 @@
+import { computeWilsonInterval } from './statistics.js';
+
 export function computeZoneProbability(closes, zonePrice, zoneType) {
   const thresholdPct = 0.02;
   const lookAheadDays = 5;
@@ -24,7 +26,7 @@ export function computeZoneProbability(closes, zonePrice, zoneType) {
     }
   }
   if (approaches === 0) return null;
-  return { approaches, bounces, bounceRate: bounces / approaches };
+  return { approaches, bounces, bounceRate: bounces / approaches, wilson: computeWilsonInterval(bounces, approaches) };
 }
 
 export function computePriceAction(closes, highs, lows, currentPrice) {
@@ -67,6 +69,7 @@ export function computePriceAction(closes, highs, lows, currentPrice) {
   return { nearestSupport, nearestResistance };
 }
 
+// Detección matemática de patrones de vela Engulfing (mismo criterio que TA-Lib CDLENGULFING)
 export function detectEngulfingMarkers(ohlc) {
   const markers = [];
   for (let i = 1; i < ohlc.length; i++) {
@@ -83,4 +86,3 @@ export function detectEngulfingMarkers(ohlc) {
   }
   return markers;
 }
-
