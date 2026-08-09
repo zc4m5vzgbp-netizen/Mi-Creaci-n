@@ -85,28 +85,3 @@ export function computeTargetZones(price, atr) {
     downside: { t1: price - atr * 1, t2: price - atr * 2, t3: price - atr * 3 },
   };
 }
-
-// Interpretación propia (no un término financiero estándar): qué tan sensible es
-// el cambio de precio ante cambios de volumen, día a día, sobre el historial real.
-export function computePriceVolumeElasticity(closes, volumes, period = 30) {
-  const n = Math.min(period, closes.length - 1, volumes.length - 1);
-  if (n < 5) return null;
-  const priceChanges = [], volumeChanges = [];
-  const startIdx = closes.length - n;
-  for (let i = startIdx; i < closes.length; i++) {
-    if (closes[i - 1] === 0 || volumes[i - 1] === 0) continue;
-    priceChanges.push((closes[i] - closes[i - 1]) / closes[i - 1]);
-    volumeChanges.push((volumes[i] - volumes[i - 1]) / volumes[i - 1]);
-  }
-  if (priceChanges.length < 5) return null;
-  const pMean = priceChanges.reduce((a, b) => a + b, 0) / priceChanges.length;
-  const vMean = volumeChanges.reduce((a, b) => a + b, 0) / volumeChanges.length;
-  let num = 0, den = 0;
-  for (let i = 0; i < priceChanges.length; i++) {
-    num += (volumeChanges[i] - vMean) * (priceChanges[i] - pMean);
-    den += (volumeChanges[i] - vMean) ** 2;
-  }
-  if (den === 0) return null;
-  const coefficient = num / den;
-  return { coefficient, sample: priceChanges.length };
-}
