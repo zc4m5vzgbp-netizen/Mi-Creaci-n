@@ -6,7 +6,7 @@ import { renderExtraNews } from '../ui/newsCards.js';
 import { renderSentimentCard } from '../ui/sentimentCard.js';
 import { renderCentralCard } from '../ui/centralCard.js';
 import { computeNewsSentimentTally, computeOverallSentiment } from '../analysis/sentimentEngine.js';
-import { computeMomentumScore, computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeSentimentScoreFromVolatility, computeCentralScore } from '../analysis/centralEngine.js';
+import { computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeCentralScore } from '../analysis/centralEngine.js';
 import { computeYoY } from '../ui/fundamentalCard.js';
 
 function wilsonPromptText(wilson) {
@@ -175,18 +175,21 @@ export async function fetchAIAnalysis(symbol) {
       if (cpi) priceLines.push(`Contexto macro general (no específico de esta acción): CPI interanual ${cpi.yoyPct.toFixed(1)}%${fedRate != null ? `, tasa de la Reserva Federal ${fedRate.toFixed(2)}%` : ''}`);
     }
 
+    const cd = ind.centralDims || {};
     const centralInputs = {
-      trendScore: ind.sentiment && ind.sentiment.trend && ind.sentiment.trend.total > 0 ? ind.sentiment.trend.bullishPct : null,
-      momentumScore: computeMomentumScore(ind),
+      trendDirectionScore: cd.trendDirection,
+      trendStrengthScore: cd.trendStrength,
+      marketStructureScore: cd.marketStructure,
+      momentumScore: cd.momentumComposite,
       volumeScore: computeVolumeScore(ind),
       newsScore: computeNewsScore(newsTallyForSentiment),
       optionsScore: computeOptionsScoreFromWalls(gexForPrompt, ind.lastClose),
-      sentimentScore: computeSentimentScoreFromVolatility(ind.sentiment ? ind.sentiment.volatilityRegime : null),
+      volatilityScore: cd.volatilityScore,
     };
     const central = computeCentralScore(centralInputs);
     if (central) {
       const dimLines = Object.entries(central.dims).map(([k, v]) => `${k}: ${Math.round(v)}/100`).join(', ');
-      priceLines.push(`Motor Central (promedio de ${central.dimCount} de 6 dimensiones, calculado matemáticamente — no inventado): puntaje general ${Math.round(central.avgScore)}/100, dirección dominante ${central.direction}, alineación de señales (Signal Strength) ${central.signalStrength}% — qué tanto concuerdan las dimensiones entre sí, sin indicar dirección (más alto cuando coinciden, más bajo cuando se contradicen). Desglose: ${dimLines}.`);
+      priceLines.push(`Motor Central (promedio de ${central.dimCount} de 8 dimensiones, calculado matemáticamente — no inventado): puntaje general ${Math.round(central.avgScore)}/100, dirección dominante ${central.direction}, alineación de señales (Signal Strength) ${central.signalStrength}% — qué tanto concuerdan las dimensiones entre sí, sin indicar dirección (más alto cuando coinciden, más bajo cuando se contradicen). Desglose: ${dimLines}.`);
     }
   } else {
     priceLines.push('(Sin indicadores ni zonas de precio disponibles todavía — solo hay precio en vivo)');
