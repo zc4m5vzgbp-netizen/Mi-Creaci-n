@@ -10,7 +10,8 @@ import { computeLinearRegression, computeHistoricalVolatility, computeWeightedMo
 import { computeDirectionalProbability } from '../analysis/probabilityEngine.js';
 import { detectOrderBlocks, detectFairValueGaps, detectStructureBreak, detectLiquidityGrabs, detectEqualLevels, computePremiumDiscount } from '../analysis/smartMoney.js';
 import { computeAbnormalVolume, computeAccumDistLine, detectVolumeClimax, detectAbsorption } from '../analysis/volumeEngine.js';
-import { computeVolatilityRegime, computeTrendSentiment } from '../analysis/sentimentEngine.js';
+import { computeVolatilityRegime, computeTrendDirection } from '../analysis/sentimentEngine.js';
+import { computeMomentumComposite, computeTrendStrengthScore, computeMarketStructureScore, computeVolatilityScore } from '../analysis/centralEngine.js';
 import { renderIndicators } from '../ui/indicatorsCard.js';
 import { renderWatchlist } from '../ui/watchlist.js';
 
@@ -71,12 +72,28 @@ export async function fetchIndicators(symbol, force) {
     const adxValue = computeADX(highs, lows, closes, 14);
     const superTrendValue = computeSuperTrend(highs, lows, closes, 10, 3);
     const sma50Value = computeSMA(closes, 50);
+    const rsi14Value = computeRSI(closes, 14);
+    const stochasticValue = computeStochastic(highs, lows, closes, 14, 3);
+    const volatilityRegimeValue = computeVolatilityRegime(closes);
+
+    const trendDirectionVotes = computeTrendDirection({
+      superTrend: superTrendValue, sma50: sma50Value, ema200: ema200, lastClose: lastCloseValue,
+    });
     const sentiment = {
-      trend: computeTrendSentiment({
-        adx: adxValue, superTrend: superTrendValue, sma50: sma50Value, ema200: ema200,
-        lastClose: lastCloseValue, structure: smartMoney.structure,
-      }),
-      volatilityRegime: computeVolatilityRegime(closes),
+      trend: trendDirectionVotes,
+      volatilityRegime: volatilityRegimeValue,
+    };
+
+    // Las 5 dimensiones que dependen solo de esta misma descarga de Alpha Vantage
+    // se calculan UNA VEZ aquí y se guardan — centralCard.js y aiProxy.js las leen
+    // directamente, sin recalcularlas. Noticias y Opciones NO están aquí a propósito:
+    // dependen de datos que llegan después y por separado (traducir noticias, GEX).
+    const centralDims = {
+      trendDirection: trendDirectionVotes.total ? trendDirectionVotes.bullishPct : null,
+      trendStrength: computeTrendStrengthScore(adxValue),
+      marketStructure: computeMarketStructureScore(smartMoney.structure),
+      momentumComposite: computeMomentumComposite({ rsi14: rsi14Value, macd: macd, stochastic: stochasticValue }),
+      volatilityScore: computeVolatilityScore(volatilityRegimeValue),
     };
 
     state.indicatorsCache[symbol] = {
@@ -85,7 +102,7 @@ export async function fetchIndicators(symbol, force) {
       sma20: computeSMA(closes, 20),
       sma50: sma50Value,
       ema200: ema200,
-      rsi14: computeRSI(closes, 14),
+      rsi14: rsi14Value,
       macd: macd,
       freshCross: freshCross,
       recentUpDay: recentUpDay,
@@ -100,7 +117,7 @@ export async function fetchIndicators(symbol, force) {
       atr14: atr14Value,
       adx: adxValue,
       bollinger: computeBollinger(closes, 20, 2),
-      stochastic: computeStochastic(highs, lows, closes, 14, 3),
+      stochastic: stochasticValue,
       donchian: computeDonchian(highs, lows, 20),
       ichimoku: computeIchimoku(highs, lows, closes),
       superTrend: superTrendValue,
@@ -115,6 +132,7 @@ export async function fetchIndicators(symbol, force) {
       smartMoney: smartMoney,
       volumeEngine: volumeEngine,
       sentiment: sentiment,
+      centralDims: centralDims,
     };
     safeSetItem('indicators_cache', JSON.stringify(state.indicatorsCache));
   } catch (e) {
