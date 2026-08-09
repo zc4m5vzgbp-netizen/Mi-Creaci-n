@@ -1,3 +1,5 @@
+import { computeWilsonInterval } from './statistics.js';
+
 // Motor de Probabilidades — combina señales de RSI, tendencia y momentum
 // (del Motor Técnico) para clasificar el "estado" actual de la acción, y
 // busca en el historial real cuántas veces estuvo en un estado parecido,
@@ -57,14 +59,21 @@ export function computeDirectionalProbability(closes, lookAheadDays = 5, thresho
 
   const maxIdx = closes.length - lookAheadDays - 1;
   let up = 0, down = 0, flat = 0, total = 0;
-  for (let i = 50; i <= maxIdx; i++) {
+  let i = 50;
+  while (i <= maxIdx) {
     const state = classifyState(closes, rsiSeries, sma50Series, i);
-    if (!state || state.key !== today.key) continue;
+    if (!state || state.key !== today.key) {
+      i++;
+      continue;
+    }
     const changePct = ((closes[i + lookAheadDays] - closes[i]) / closes[i]) * 100;
     total++;
     if (changePct > thresholdPct) up++;
     else if (changePct < -thresholdPct) down++;
     else flat++;
+    // Salto de ventana no-solapada: la próxima observación empieza después de
+    // que termine la ventana de resultado de esta, igual que computeZoneProbability.
+    i += lookAheadDays;
   }
 
   if (total === 0) return null;
@@ -76,5 +85,8 @@ export function computeDirectionalProbability(closes, lookAheadDays = 5, thresho
     state: today,
     lookAheadDays,
     thresholdPct,
+    wilsonUp: computeWilsonInterval(up, total),
+    wilsonDown: computeWilsonInterval(down, total),
+    wilsonFlat: computeWilsonInterval(flat, total),
   };
 }
