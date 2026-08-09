@@ -8,10 +8,28 @@ import { renderCentralCard } from '../ui/centralCard.js';
 import { computeNewsSentimentTally, computeOverallSentiment } from '../analysis/sentimentEngine.js';
 import { computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeCentralScore } from '../analysis/centralEngine.js';
 import { computeYoY } from '../ui/fundamentalCard.js';
+import { computeZoneContext } from '../analysis/priceAction.js';
 
 function wilsonPromptText(wilson) {
   if (!wilson) return '';
   return ` (IC 95% Wilson: ${Math.round(wilson.lower * 100)}%–${Math.round(wilson.upper * 100)}%)`;
+}
+
+function zoneContextText(context) {
+  const parts = [];
+  if (context.fibonacci) {
+    if (context.fibonacci.inside.length) parts.push(`Fibonacci ${context.fibonacci.inside.join('%, ')}% dentro de la zona`);
+    else if (context.fibonacci.nearest) parts.push(`Fibonacci ${context.fibonacci.nearest.name}% a $${fmtPrice(context.fibonacci.nearest.dist)} ${context.fibonacci.nearest.above ? 'arriba' : 'abajo'} de la zona`);
+  }
+  if (context.pivot) {
+    if (context.pivot.inside.length) parts.push(`Pivot ${context.pivot.inside.join(', ')} dentro de la zona`);
+    else if (context.pivot.nearest) parts.push(`Pivot ${context.pivot.nearest.name} a $${fmtPrice(context.pivot.nearest.dist)} ${context.pivot.nearest.above ? 'arriba' : 'abajo'} de la zona`);
+  }
+  if (context.atrDistance != null) parts.push(`distancia ${context.atrDistance.toFixed(1)} ATR`);
+  if (context.volumeAbnormal) parts.push(`volumen ${context.volumeAbnormal} reciente`);
+  if (context.structureCompatible) parts.push(`estructura de mercado ${context.structureCompatible}`);
+  if (!parts.length) return '';
+  return ` Contexto descriptivo de la zona (NO es evidencia estadística, no lo sumes ni lo interpretes como probabilidad — es solo información complementaria): ${parts.join('; ')}.`;
 }
 
 export async function translateNews(symbol) {
@@ -99,6 +117,7 @@ export async function fetchAIAnalysis(symbol) {
         } else {
           line += ' No hay suficientes acercamientos históricos para calcular una frecuencia confiable.';
         }
+        line += zoneContextText(computeZoneContext(sup, 'support', price, ind));
         priceLines.push(line);
       }
       if (ind.priceAction.nearestResistance) {
@@ -110,6 +129,7 @@ export async function fetchAIAnalysis(symbol) {
         } else {
           line += ' No hay suficientes acercamientos históricos para calcular una frecuencia confiable.';
         }
+        line += zoneContextText(computeZoneContext(res, 'resistance', price, ind));
         priceLines.push(line);
       }
       if (ind.priceAction.nearestSupport && ind.priceAction.nearestResistance) {
