@@ -4,8 +4,25 @@ import { fetchWithRetry } from '../utils/dom.js';
 import { renderQuote } from '../ui/quoteCard.js';
 import { renderWatchlist, renderTicker } from '../ui/watchlist.js';
 import { renderFundamentalCard } from '../ui/fundamentalCard.js';
+import { autofillRiskEntryPrice } from '../ui/riskCard.js';
+
+// Registro simple de qué símbolos tienen una petición en curso ahora mismo —
+// evita que dos fetchSymbol() para el mismo símbolo corran en paralelo (por
+// ejemplo, si el auto-refresh de 60s coincide con que el usuario también lo
+// seleccionó manualmente). No cancela nada en curso, solo evita duplicar.
+const inFlightSymbols = new Set();
 
 export async function fetchSymbol(symbol) {
+  if (inFlightSymbols.has(symbol)) return;
+  inFlightSymbols.add(symbol);
+  try {
+    await fetchSymbolInner(symbol);
+  } finally {
+    inFlightSymbols.delete(symbol);
+  }
+}
+
+async function fetchSymbolInner(symbol) {
   const existing = state.cache[symbol];
   const hasProfile = !!(existing && existing.name);
   state.cache[symbol] = Object.assign({}, existing, { loading: true, error: null });
@@ -65,4 +82,5 @@ export async function fetchSymbol(symbol) {
     state.cache[symbol] = Object.assign({}, state.cache[symbol], { loading: false, error: e.message || 'Error de conexión' });
   }
   renderQuote(); renderWatchlist(); renderTicker(); renderFundamentalCard();
+  autofillRiskEntryPrice(symbol);
 }
