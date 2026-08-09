@@ -4,19 +4,20 @@ import { fmtPrice } from '../utils/format.js';
 
 export function bounceBarHTML(stats) {
   if (!stats || stats.approaches === 0) {
-    return `<div class="dim" style="font-size:11px; margin-top:6px;">Sin suficientes acercamientos históricos para calcular una probabilidad.</div>`;
+    return `<div class="dim" style="font-size:11px; margin-top:6px;">Sin suficientes acercamientos históricos para calcular una frecuencia.</div>`;
   }
   const pct = Math.round(stats.bounceRate * 100);
   const color = pct >= 60 ? 'var(--gain)' : (pct <= 40 ? 'var(--loss)' : 'var(--amber)');
   const smallSample = stats.approaches < 3 ? ' — muestra pequeña, tómalo con cautela' : '';
+  const wilsonText = stats.wilson ? ` · IC 95%: ${Math.round(stats.wilson.lower * 100)}%–${Math.round(stats.wilson.upper * 100)}%` : '';
   return `
     <div style="margin-top:8px;">
       <div style="display:flex; justify-content:space-between; font-size:11.5px;">
-        <span class="dim">Probabilidad histórica de rebote</span>
+        <span class="dim">Frecuencia histórica de rebote</span>
         <span class="mono" style="color:${color}; font-weight:700;">${pct}%</span>
       </div>
       <div class="prob-bar-track"><div class="prob-bar-fill" style="width:${pct}%; background:${color};"></div></div>
-      <div class="dim" style="font-size:10.5px; margin-top:4px;">Rebotó ${stats.bounces} de ${stats.approaches} veces que el precio se acercó, en los últimos ~${HISTORY_DAYS} días${smallSample}</div>
+      <div class="dim" style="font-size:10.5px; margin-top:4px;">Rebotó ${stats.bounces} de ${stats.approaches} veces que el precio se acercó, en los últimos ~${HISTORY_DAYS} días${wilsonText}${smallSample}</div>
     </div>
   `;
 }
