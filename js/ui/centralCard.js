@@ -45,7 +45,7 @@ export function renderCentralCard() {
     <div class="dim" style="font-size:11px; margin-bottom:10px;">Combina ${central.dimCount} de 6 dimensiones disponibles hoy — nunca depende de una sola señal.</div>
     <div style="text-align:center; padding:8px 0;">
       <div class="mono" style="font-size:32px; font-weight:700;">${Math.round(central.avgScore)}<span style="font-size:16px; color:var(--paper-dim);">/100</span></div>
-      <div class="dim" style="font-size:11px;">Nivel de confianza: ${central.confidence}%</div>
+      <div class="dim" style="font-size:11px;">Alineación de señales: ${central.signalStrength}% · Dirección dominante: ${central.direction}</div>
     </div>
     ${scoreRow('Tendencia', central.dims.tendencia != null ? Math.round(central.dims.tendencia) : null)}
     ${scoreRow('Momentum', central.dims.momentum != null ? Math.round(central.dims.momentum) : null)}
