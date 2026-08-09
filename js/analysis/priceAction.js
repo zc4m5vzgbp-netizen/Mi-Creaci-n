@@ -1,5 +1,63 @@
 import { computeWilsonInterval } from './statistics.js';
 
+// Contexto descriptivo de una zona — NUNCA produce un score ni suma nada. Cada
+// factor se informa como texto independiente. La única cifra estadística de la
+// zona sigue siendo bounceStats (frecuencia histórica condicional + Wilson),
+// calculada aparte por computeZoneProbability, sin tocar.
+//
+// Regla para Fibonacci/Pivot (sin umbral inventado): si el nivel cae DENTRO del
+// rango real [min, max] de la zona, se nombra explícitamente. Si no, se informa
+// su distancia real — nunca se convierte en "coincide/no coincide" con un margen
+// arbitrario.
+export function computeZoneContext(zone, zoneType, currentPrice, ind) {
+  const context = {};
+
+  function nearestOutside(levels) {
+    const inside = [];
+    let nearest = null;
+    Object.entries(levels).forEach(([name, price]) => {
+      if (price >= zone.min && price <= zone.max) {
+        inside.push(name);
+      } else {
+        const dist = Math.min(Math.abs(price - zone.min), Math.abs(price - zone.max));
+        if (!nearest || dist < nearest.dist) nearest = { name, dist, above: price > zone.max };
+      }
+    });
+    return { inside, nearest };
+  }
+
+  if (ind.fibonacci) {
+    context.fibonacci = nearestOutside(Object.assign({}, ind.fibonacci.levels, ind.fibonacci.extensions));
+  }
+
+  if (ind.pivotPoints) {
+    const named = {};
+    Object.entries(ind.pivotPoints).forEach(([k, v]) => { named[k.toUpperCase()] = v; });
+    context.pivot = nearestOutside(named);
+  }
+
+  if (ind.atr14 && ind.atr14 > 0 && currentPrice != null) {
+    const distDollars = zoneType === 'support'
+      ? Math.max(0, currentPrice - zone.max)
+      : Math.max(0, zone.min - currentPrice);
+    context.atrDistance = distDollars / ind.atr14;
+  }
+
+  if (ind.volumeEngine && ind.volumeEngine.abnormal) {
+    const level = ind.volumeEngine.abnormal.level;
+    if (level === 'alto' || level === 'extremo') context.volumeAbnormal = level;
+  }
+
+  if (ind.smartMoney && ind.smartMoney.structure && ind.smartMoney.structure.structure) {
+    const s = ind.smartMoney.structure.structure;
+    if (s === 'indefinida') context.structureCompatible = 'indefinida';
+    else if (zoneType === 'support') context.structureCompatible = s === 'alcista' ? 'compatible' : 'no compatible';
+    else context.structureCompatible = s === 'bajista' ? 'compatible' : 'no compatible';
+  }
+
+  return context;
+}
+
 export function computeZoneProbability(closes, zonePrice, zoneType) {
   const thresholdPct = 0.02;
   const lookAheadDays = 5;
