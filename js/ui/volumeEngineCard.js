@@ -1,5 +1,4 @@
 import { state } from '../state.js';
-import { fmtPrice } from '../utils/format.js';
 
 function row(label, caption, valueHtml, signalClass) {
   return `<div class="indicator-row"><div><div class="indicator-label">${label}</div><div class="indicator-caption">${caption}</div></div><div style="text-align:right;"><div class="mono ${signalClass}" style="font-size:13px;">${valueHtml}</div></div></div>`;
@@ -29,11 +28,6 @@ export function renderVolumeEngine() {
     rows.push(row('Acumulación / Distribución', 'Indicador real, no aproximado — combina precio y volumen.', v.accumDist.trend, cls));
   }
 
-  if (v.approxDelta) {
-    const cls = v.approxDelta.bias === 'comprador' ? 'tag-good' : (v.approxDelta.bias === 'vendedor' ? 'tag-bad' : 'tag-neutral');
-    rows.push(row('Delta (estimado)*', '*No es el delta real de compras vs. ventas — estimado por dónde cerró la vela en su rango.', v.approxDelta.bias, cls));
-  }
-
   if (v.climax) {
     rows.push(row(v.climax.type === 'clímax de compra' ? 'Clímax de compra' : 'Clímax de venta', v.climax.desc, 'detectado', 'tag-neutral'));
   }
@@ -42,13 +36,9 @@ export function renderVolumeEngine() {
     rows.push(row('Absorción', v.absorption.desc, 'detectada', 'tag-neutral'));
   }
 
-  if (v.volumeProfile) {
-    rows.push(row('Zona de mayor volumen (aprox.)*', '*No es volume profile intradía real — es dónde se concentró el volumen en ~90 días.', '$' + fmtPrice(v.volumeProfile.pocPrice), 'tag-neutral'));
-  }
-
   card.innerHTML = `
     <div class="card-title" style="margin-bottom:10px;">Motor de Volumen</div>
     ${rows.length ? rows.join('') : '<div class="dim" style="font-size:13px;">Sin señales relevantes de volumen hoy.</div>'}
-    <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">Los ítems marcados con * son aproximaciones a partir de datos diarios — la versión real requiere datos de cada operación individual, que no existen gratis. El resto son fórmulas estándar reales.</div>
+    <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">Fórmulas reales sobre volumen diario — ninguna requiere datos de cada operación individual.</div>
   `;
 }
