@@ -4,6 +4,22 @@ import { computePositionSize, computeRiskReward } from '../analysis/riskEngine.j
 
 const inputStyle = 'width:100%; background:var(--surface-alt); border:1px solid var(--hairline); border-radius:6px; padding:7px; color:var(--paper); font-family:inherit; font-size:14px; margin-top:4px;';
 
+// Sincroniza el precio de mercado con el campo "Precio de entrada" sin
+// reconstruir la tarjeta — así el auto-refresh nunca borra Capital, Riesgo %,
+// Stop Loss ni Take Profit que el usuario ya haya escrito. Solo actúa si el
+// símbolo que terminó de cargar sigue siendo el seleccionado, y solo si el
+// campo está vacío (nunca pisa un valor ya puesto, automático o manual).
+export function autofillRiskEntryPrice(symbol) {
+  if (symbol !== state.selected) return;
+  const input = document.getElementById('riskEntryInput');
+  if (!input) return;
+  if (input.value !== '') return;
+  const s = state.cache[symbol];
+  if (s && s.price != null) {
+    input.value = s.price.toFixed(2);
+  }
+}
+
 export function renderRiskCard() {
   const card = document.getElementById('riskCard');
   if (!card) return;
