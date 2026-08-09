@@ -92,12 +92,37 @@ function switchTab(tabId) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// Auto-refresh: se ejecuta cada 60s mientras la app está visible. Una
+// bandera evita que dos ciclos corran a la vez (por ejemplo si una respuesta
+// tarda más de 60s), y un listener de visibilidad refresca de inmediato al
+// volver de segundo plano SOLO si ya pasó suficiente tiempo desde el último
+// ciclo — no se agrega ningún trabajo mientras la app sigue oculta.
+let autoRefreshInFlight = false;
+let lastAutoRefreshAt = 0;
+const AUTO_REFRESH_INTERVAL_MS = 60000;
+
+async function runAutoRefreshCycle() {
+  if (autoRefreshInFlight) return;
+  if (document.visibilityState !== 'visible') return;
+  if (!state.apiKey) return;
+  autoRefreshInFlight = true;
+  try {
+    const symbols = Array.from(new Set(INDEX_SYMBOLS.concat([state.selected], state.watchlist)));
+    await Promise.all(symbols.map(fetchSymbol));
+    lastAutoRefreshAt = Date.now();
+  } finally {
+    autoRefreshInFlight = false;
+  }
+}
+
 function startAutoRefresh() {
-  setInterval(() => {
-    if (document.visibilityState !== 'visible') return;
-    if (!state.apiKey) return;
-    Array.from(new Set(INDEX_SYMBOLS.concat([state.selected], state.watchlist))).forEach(fetchSymbol);
-  }, 60000);
+  lastAutoRefreshAt = Date.now();
+  setInterval(runAutoRefreshCycle, AUTO_REFRESH_INTERVAL_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && Date.now() - lastAutoRefreshAt >= AUTO_REFRESH_INTERVAL_MS) {
+      runAutoRefreshCycle();
+    }
+  });
 }
 
 let searchTimer = null;
