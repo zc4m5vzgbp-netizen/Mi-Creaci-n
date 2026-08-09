@@ -48,17 +48,10 @@ export function renderMathEngine() {
     targetHtml = row('Zonas objetivo (múltiplos de ATR)', 'Proyección matemática, no una predicción — al alza y a la baja.', `↑ $${fmtPrice(tz.upside.t1)} / $${fmtPrice(tz.upside.t2)} · ↓ $${fmtPrice(tz.downside.t1)} / $${fmtPrice(tz.downside.t2)}`, 'tag-neutral', '1x y 2x ATR desde el precio actual');
   }
 
-  let elastHtml = '';
-  if (data.priceVolumeElasticity) {
-    const el = data.priceVolumeElasticity;
-    elastHtml = row('Elasticidad precio-volumen*', `*Interpretación propia, no un término financiero estándar. Muestra: ${el.sample} días.`, el.coefficient.toFixed(3), 'tag-neutral', el.coefficient > 0 ? 'precio y volumen se mueven juntos' : 'se mueven en direcciones opuestas');
-  }
-
   card.innerHTML = `
     <div class="card-title" style="margin-bottom:10px;">Motor Matemático</div>
     ${rows.join('')}
     ${targetHtml}
-    ${elastHtml}
     <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">Cálculos matemáticos estándar (regresión, volatilidad, percentiles) sobre tu historial real. No son predicciones ni recomendaciones de inversión.</div>
   `;
 }
