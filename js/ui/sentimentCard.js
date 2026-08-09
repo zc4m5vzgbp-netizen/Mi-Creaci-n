@@ -26,7 +26,7 @@ export function renderSentimentCard() {
 
   const t = data.sentiment.trend;
   if (t && t.total > 0) {
-    rows.push(row('Tendencia (voto de indicadores)', `${t.bullish} de ${t.total} señales apuntan alcistas (ADX/DI, SuperTrend, medias, estructura).`, t.bullishPct.toFixed(0) + '% alcista', t.bullishPct >= 60 ? 'tag-good' : (t.bullishPct <= 40 ? 'tag-bad' : 'tag-neutral')));
+    rows.push(row('Tendencia (voto de indicadores)', `${t.bullish} de ${t.total} señales apuntan alcistas (SuperTrend, precio vs. SMA50, precio vs. EMA200). Fuerza de tendencia (ADX) y estructura de mercado se muestran aparte, en el Motor Central.`, t.bullishPct.toFixed(0) + '% alcista', t.bullishPct >= 60 ? 'tag-good' : (t.bullishPct <= 40 ? 'tag-bad' : 'tag-neutral')));
   }
 
   const v = data.sentiment.volatilityRegime;
