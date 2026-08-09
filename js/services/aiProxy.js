@@ -9,6 +9,11 @@ import { computeNewsSentimentTally, computeOverallSentiment } from '../analysis/
 import { computeMomentumScore, computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeSentimentScoreFromVolatility, computeCentralScore } from '../analysis/centralEngine.js';
 import { computeYoY } from '../ui/fundamentalCard.js';
 
+function wilsonPromptText(wilson) {
+  if (!wilson) return '';
+  return ` (IC 95% Wilson: ${Math.round(wilson.lower * 100)}%–${Math.round(wilson.upper * 100)}%)`;
+}
+
 export async function translateNews(symbol) {
   if (!state.aiProxyUrl || !state.aiProxyPassword) return;
   const newsData = state.newsCache[symbol];
@@ -90,9 +95,9 @@ export async function fetchAIAnalysis(symbol) {
         const distPct = ((price - sup.price) / price) * 100;
         let line = `Zona de soporte/demanda más cercana: $${fmtPrice(sup.min)}–$${fmtPrice(sup.max)} (${sup.touches} toques históricos como pivote), a ${distPct.toFixed(1)}% por debajo del precio actual.`;
         if (sup.bounceStats && sup.bounceStats.approaches > 0) {
-          line += ` Probabilidad histórica REAL calculada (no inventada) de rebote al acercarse a esta zona en los últimos ${HISTORY_DAYS} días: ${Math.round(sup.bounceStats.bounceRate * 100)}% (rebotó ${sup.bounceStats.bounces} de ${sup.bounceStats.approaches} veces que el precio se acercó).`;
+          line += ` Frecuencia histórica condicional de rebote al acercarse a esta zona en los últimos ${HISTORY_DAYS} días (no es una predicción): ${Math.round(sup.bounceStats.bounceRate * 100)}%${wilsonPromptText(sup.bounceStats.wilson)} (rebotó ${sup.bounceStats.bounces} de ${sup.bounceStats.approaches} veces que el precio se acercó).`;
         } else {
-          line += ' No hay suficientes acercamientos históricos para calcular una probabilidad confiable.';
+          line += ' No hay suficientes acercamientos históricos para calcular una frecuencia confiable.';
         }
         priceLines.push(line);
       }
@@ -101,9 +106,9 @@ export async function fetchAIAnalysis(symbol) {
         const distPct = ((res.price - price) / price) * 100;
         let line = `Zona de resistencia/oferta más cercana: $${fmtPrice(res.min)}–$${fmtPrice(res.max)} (${res.touches} toques históricos como pivote), a ${distPct.toFixed(1)}% por encima del precio actual.`;
         if (res.bounceStats && res.bounceStats.approaches > 0) {
-          line += ` Probabilidad histórica REAL calculada (no inventada) de rebote (rechazo) al acercarse a esta zona en los últimos ${HISTORY_DAYS} días: ${Math.round(res.bounceStats.bounceRate * 100)}% (rebotó ${res.bounceStats.bounces} de ${res.bounceStats.approaches} veces que el precio se acercó).`;
+          line += ` Frecuencia histórica condicional de rebote (rechazo) al acercarse a esta zona en los últimos ${HISTORY_DAYS} días (no es una predicción): ${Math.round(res.bounceStats.bounceRate * 100)}%${wilsonPromptText(res.bounceStats.wilson)} (rebotó ${res.bounceStats.bounces} de ${res.bounceStats.approaches} veces que el precio se acercó).`;
         } else {
-          line += ' No hay suficientes acercamientos históricos para calcular una probabilidad confiable.';
+          line += ' No hay suficientes acercamientos históricos para calcular una frecuencia confiable.';
         }
         priceLines.push(line);
       }
@@ -141,7 +146,7 @@ export async function fetchAIAnalysis(symbol) {
     }
     if (ind.directionalProbability) {
       const dp = ind.directionalProbability;
-      priceLines.push(`Probabilidad histórica REAL (Motor de Probabilidades, contada sobre ${dp.sample} configuraciones parecidas del pasado — no inventada): ${dp.upPct.toFixed(0)}% de las veces subió, ${dp.flatPct.toFixed(0)}% consolidó, ${dp.downPct.toFixed(0)}% bajó, en los siguientes ${dp.lookAheadDays} días de cotización`);
+      priceLines.push(`Frecuencia histórica condicional (Motor de Probabilidades, contada sobre ${dp.sample} configuraciones parecidas del pasado, ventanas no solapadas — no es una predicción): subió ${dp.upPct.toFixed(0)}%${wilsonPromptText(dp.wilsonUp)} de las veces, consolidó ${dp.flatPct.toFixed(0)}%${wilsonPromptText(dp.wilsonFlat)}, bajó ${dp.downPct.toFixed(0)}%${wilsonPromptText(dp.wilsonDown)}, en los siguientes ${dp.lookAheadDays} días de cotización`);
     }
 
     const newsDataForSentiment = state.newsCache[symbol];
@@ -204,6 +209,8 @@ Estructura tu respuesta en estos bloques, con encabezados cortos:
 5. Qué escenarios son más probables — usando las probabilidades históricas reales que te doy, no una predicción tuya.
 
 Nunca dés una instrucción de "compra" o "vende" — solo describe el panorama para que la persona decida por su cuenta. Si falta información en alguna de las cinco partes, dilo claramente en vez de rellenar con algo inventado.
+
+Sobre la frecuencia histórica condicional que ves en los datos: describe lo que ocurrió en el pasado en situaciones similares — NO es una predicción ni una garantía de que el activo va a subir o bajar. Nunca conviertas, por ejemplo, "70% histórico" en "70% de probabilidad de que suba" — son afirmaciones distintas, y la segunda es una promesa que no podemos hacer. Donde veas un intervalo IC 95% (Wilson) junto a un porcentaje, ese rango representa la incertidumbre estadística real de la muestra: un intervalo angosto significa un estimador más preciso, uno amplio significa que la muestra es chica y hay que comunicarlo con cautela, incluso si el porcentaje central se ve alto.
 
 Datos reales de hoy para ${symbol}:\n\n${priceLines.join('\n')}\n\n${newsLines.length ? `Noticias reales recientes (menciona si ayudan a explicar lo que ves, sin inventar nada que no esté aquí):\n${newsLines.join('\n')}` : 'No hay noticias recientes cargadas — no las menciones.'}`;
 
