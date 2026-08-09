@@ -15,16 +15,13 @@ export function computeVolatilityRegime(closes) {
   };
 }
 
-// Cuenta cuántas señales de tendencia ya calculadas (ADX/DI, SuperTrend, precio vs
-// medias, estructura de mercado) apuntan alcista vs. bajista. Un "voto" transparente,
-// no una caja negra.
-export function computeTrendSentiment(inputs) {
+// Solo SuperTrend + SMA50 + EMA200 — pregunta únicamente "¿dónde está el precio
+// respecto a estas líneas?". ADX (fuerza) y Estructura viven en sus propias
+// dimensiones independientes (computeTrendStrengthScore, computeMarketStructureScore
+// en centralEngine.js) para no mezclar preguntas conceptualmente distintas.
+export function computeTrendDirection(inputs) {
   let bullish = 0, bearish = 0, total = 0;
 
-  if (inputs.adx && inputs.adx.adx >= 20) {
-    total++;
-    if (inputs.adx.plusDI > inputs.adx.minusDI) bullish++; else bearish++;
-  }
   if (inputs.superTrend) {
     total++;
     if (inputs.superTrend.direction === 'alcista') bullish++; else bearish++;
@@ -36,10 +33,6 @@ export function computeTrendSentiment(inputs) {
   if (inputs.ema200 != null) {
     total++;
     if (inputs.lastClose > inputs.ema200) bullish++; else bearish++;
-  }
-  if (inputs.structure && inputs.structure.structure !== 'indefinida') {
-    total++;
-    if (inputs.structure.structure === 'alcista') bullish++; else bearish++;
   }
 
   return { bullish, bearish, total, bullishPct: total ? (bullish / total) * 100 : null };
