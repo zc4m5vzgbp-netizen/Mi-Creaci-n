@@ -2,24 +2,46 @@
 // en puntajes 0-100 por dimensión. Nunca depende de una sola señal, y las
 // dimensiones sin datos simplemente se excluyen del promedio (no se inventan).
 
-export function computeMomentumScore(ind) {
-  let score = 50, has = false;
+// Voto por mayoría simple entre RSI, MACD y Stochastic — cada uno cuenta 1 voto
+// igual, sin pesos. Reemplaza el sistema anterior de puntos aditivos (+15/-15...)
+// que no tenía justificación estadística para esos números específicos.
+export function computeMomentumComposite(ind) {
+  let bullish = 0, bearish = 0, total = 0;
+
   if (ind.rsi14 != null) {
-    has = true;
-    if (ind.rsi14 >= 45 && ind.rsi14 <= 65) score += 15;
-    else if (ind.rsi14 > 65) score += 5;
-    else if (ind.rsi14 < 35) score -= 15;
-    else score -= 5;
+    total++;
+    if (ind.rsi14 >= 50) bullish++; else bearish++;
   }
   if (ind.macd && ind.macd.line != null && ind.macd.signal != null) {
-    has = true;
-    score += ind.macd.line > ind.macd.signal ? 15 : -15;
+    total++;
+    if (ind.macd.line > ind.macd.signal) bullish++; else bearish++;
   }
   if (ind.stochastic) {
-    has = true;
-    score += ind.stochastic.k > 50 ? 10 : -10;
+    total++;
+    if (ind.stochastic.k > 50) bullish++; else bearish++;
   }
-  return has ? Math.max(0, Math.min(100, score)) : null;
+
+  return total ? Math.round((bullish / total) * 100) : null;
+}
+
+// ADX aporta SOLO la magnitud (qué tan fuerte es la tendencia) — la dirección
+// viene exclusivamente de +DI vs -DI, nunca del valor de ADX en sí, porque ADX
+// no mide dirección. +DI=-DI exacto → neutral (50). ADX está acotado 0-100 por
+// su propia fórmula, así que /2 es el mapeo directo a un rango de +/-50 sin
+// inventar ningún tope adicional.
+export function computeTrendStrengthScore(adx) {
+  if (!adx) return null;
+  const magnitude = adx.adx / 2;
+  if (adx.plusDI > adx.minusDI) return Math.round(Math.min(100, 50 + magnitude));
+  if (adx.minusDI > adx.plusDI) return Math.round(Math.max(0, 50 - magnitude));
+  return 50;
+}
+
+// Mapeo binario directo, sin magnitudes intermedias inventadas: alcista=100,
+// bajista=0. "Indefinida" se excluye del promedio en vez de forzar un punto medio.
+export function computeMarketStructureScore(structure) {
+  if (!structure || structure.structure === 'indefinida') return null;
+  return structure.structure === 'alcista' ? 100 : 0;
 }
 
 export function computeVolumeScore(ind) {
@@ -50,9 +72,9 @@ export function computeNewsScore(newsTally) {
   return Math.round(Math.max(0, Math.min(100, 50 + net * 50)));
 }
 
-// Deliberadamente basado SOLO en el régimen de volatilidad (no en tendencia ni
-// noticias, que ya son sus propias dimensiones) para no repetir la misma señal dos veces.
-export function computeSentimentScoreFromVolatility(volatilityRegime) {
+// Ya no se llama "sentimiento" — nunca fue más que volatilidad, el nombre viejo
+// ocultaba eso. Misma matemática exacta, ahora es su propia dimensión honesta.
+export function computeVolatilityScore(volatilityRegime) {
   if (!volatilityRegime) return null;
   if (volatilityRegime.rising) return 35;
   if (volatilityRegime.falling) return 65;
@@ -61,12 +83,14 @@ export function computeSentimentScoreFromVolatility(volatilityRegime) {
 
 export function computeCentralScore(inputs) {
   const dims = {};
-  if (inputs.trendScore != null) dims.tendencia = inputs.trendScore;
+  if (inputs.trendDirectionScore != null) dims.trendDirection = inputs.trendDirectionScore;
+  if (inputs.trendStrengthScore != null) dims.trendStrength = inputs.trendStrengthScore;
+  if (inputs.marketStructureScore != null) dims.marketStructure = inputs.marketStructureScore;
   if (inputs.momentumScore != null) dims.momentum = inputs.momentumScore;
   if (inputs.volumeScore != null) dims.volumen = inputs.volumeScore;
   if (inputs.newsScore != null) dims.noticias = inputs.newsScore;
   if (inputs.optionsScore != null) dims.opciones = inputs.optionsScore;
-  if (inputs.sentimentScore != null) dims.sentimiento = inputs.sentimentScore;
+  if (inputs.volatilityScore != null) dims.volatilidad = inputs.volatilityScore;
 
   const values = Object.values(dims);
   if (values.length === 0) return null;
