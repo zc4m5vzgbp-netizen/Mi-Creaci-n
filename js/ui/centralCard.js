@@ -1,6 +1,6 @@
 import { state } from '../state.js';
-import { computeTrendSentiment, computeNewsSentimentTally } from '../analysis/sentimentEngine.js';
-import { computeMomentumScore, computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeSentimentScoreFromVolatility, computeCentralScore } from '../analysis/centralEngine.js';
+import { computeNewsSentimentTally } from '../analysis/sentimentEngine.js';
+import { computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeCentralScore } from '../analysis/centralEngine.js';
 
 function scoreRow(label, score) {
   if (score == null) return `<div class="indicator-row"><div class="indicator-label">${label}</div><div class="dim" style="font-size:12px;">sin datos hoy</div></div>`;
@@ -19,18 +19,20 @@ export function renderCentralCard() {
   }
   if (data.error) { card.innerHTML = ''; return; }
 
-  const trendSentiment = data.sentiment ? data.sentiment.trend : null;
   const newsData = state.newsCache[state.selected];
   const newsTally = computeNewsSentimentTally(newsData);
   const gex = state.gexCache[state.selected];
+  const cd = data.centralDims || {};
 
   const central = computeCentralScore({
-    trendScore: trendSentiment && trendSentiment.total > 0 ? trendSentiment.bullishPct : null,
-    momentumScore: computeMomentumScore(data),
+    trendDirectionScore: cd.trendDirection,
+    trendStrengthScore: cd.trendStrength,
+    marketStructureScore: cd.marketStructure,
+    momentumScore: cd.momentumComposite,
     volumeScore: computeVolumeScore(data),
     newsScore: computeNewsScore(newsTally),
     optionsScore: computeOptionsScoreFromWalls(gex, data.lastClose),
-    sentimentScore: computeSentimentScoreFromVolatility(data.sentiment ? data.sentiment.volatilityRegime : null),
+    volatilityScore: cd.volatilityScore,
   });
 
   if (!central) {
@@ -42,17 +44,19 @@ export function renderCentralCard() {
 
   card.innerHTML = `
     <div class="card-title" style="margin-bottom:4px;">Motor Central</div>
-    <div class="dim" style="font-size:11px; margin-bottom:10px;">Combina ${central.dimCount} de 6 dimensiones disponibles hoy — nunca depende de una sola señal.</div>
+    <div class="dim" style="font-size:11px; margin-bottom:10px;">Combina ${central.dimCount} de 8 dimensiones disponibles hoy — nunca depende de una sola señal.</div>
     <div style="text-align:center; padding:8px 0;">
       <div class="mono" style="font-size:32px; font-weight:700;">${Math.round(central.avgScore)}<span style="font-size:16px; color:var(--paper-dim);">/100</span></div>
       <div class="dim" style="font-size:11px;">Alineación de señales: ${central.signalStrength}% · Dirección dominante: ${central.direction}</div>
     </div>
-    ${scoreRow('Tendencia', central.dims.tendencia != null ? Math.round(central.dims.tendencia) : null)}
+    ${scoreRow('Dirección de tendencia', central.dims.trendDirection != null ? Math.round(central.dims.trendDirection) : null)}
+    ${scoreRow('Fuerza de tendencia', central.dims.trendStrength != null ? Math.round(central.dims.trendStrength) : null)}
+    ${scoreRow('Estructura de mercado', central.dims.marketStructure != null ? Math.round(central.dims.marketStructure) : null)}
     ${scoreRow('Momentum', central.dims.momentum != null ? Math.round(central.dims.momentum) : null)}
     ${scoreRow('Volumen', central.dims.volumen != null ? Math.round(central.dims.volumen) : null)}
     ${scoreRow('Noticias', central.dims.noticias != null ? Math.round(central.dims.noticias) : null)}
     ${scoreRow('Opciones', central.dims.opciones != null ? Math.round(central.dims.opciones) : null)}
-    ${scoreRow('Sentimiento', central.dims.sentimiento != null ? Math.round(central.dims.sentimiento) : null)}
+    ${scoreRow('Volatilidad', central.dims.volatilidad != null ? Math.round(central.dims.volatilidad) : null)}
     ${prob ? `
     <div style="border-top:1px solid var(--hairline); margin-top:10px; padding-top:10px;">
       <div class="indicator-row"><div class="indicator-label">Frecuencia histórica condicional alcista</div><div class="mono tag-good">${prob.upPct.toFixed(0)}%</div></div>
