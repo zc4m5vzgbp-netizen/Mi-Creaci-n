@@ -74,9 +74,18 @@ export function computeCentralScore(inputs) {
   const avgScore = values.reduce((a, b) => a + b, 0) / values.length;
   const variance = values.reduce((a, b) => a + (b - avgScore) ** 2, 0) / values.length;
   const stdDev = Math.sqrt(variance);
-  const completeness = values.length / 6;
-  const agreement = Math.max(0, 1 - stdDev / 50);
-  const confidence = Math.round((completeness * 0.4 + agreement * 0.6) * 100);
+  // 50 = máximo teórico demostrado de la desviación estándar poblacional para
+  // cualquier conjunto de valores acotados en [0,100] (se alcanza exactamente
+  // cuando los valores se dividen mitad-mitad entre los dos extremos del rango
+  // — no es un umbral elegido a mano). signalStrength mide solo qué tanto
+  // concuerdan las dimensiones entre sí, sin indicar hacia qué lado.
+  const signalStrength = Math.round((1 - Math.min(stdDev / 50, 1)) * 100);
 
-  return { dims, avgScore, confidence, dimCount: values.length };
+  const bullishCount = values.filter((v) => v > 50).length;
+  const bearishCount = values.filter((v) => v < 50).length;
+  let direction = 'Mixta';
+  if (bullishCount > bearishCount) direction = 'Alcista';
+  else if (bearishCount > bullishCount) direction = 'Bajista';
+
+  return { dims, avgScore, signalStrength, direction, dimCount: values.length };
 }
