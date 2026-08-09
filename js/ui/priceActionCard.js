@@ -1,6 +1,24 @@
 import { state } from '../state.js';
 import { HISTORY_DAYS } from '../constants.js';
 import { fmtPrice } from '../utils/format.js';
+import { computeZoneContext } from '../analysis/priceAction.js';
+
+function contextLinesHTML(context) {
+  const lines = [];
+  if (context.fibonacci) {
+    if (context.fibonacci.inside.length) lines.push(`Fibonacci ${context.fibonacci.inside.join('%, ')}% dentro de la zona`);
+    else if (context.fibonacci.nearest) lines.push(`Fibonacci ${context.fibonacci.nearest.name}%: ${fmtPrice(context.fibonacci.nearest.dist)} ${context.fibonacci.nearest.above ? 'arriba' : 'abajo'} de la zona`);
+  }
+  if (context.pivot) {
+    if (context.pivot.inside.length) lines.push(`Pivot ${context.pivot.inside.join(', ')} dentro de la zona`);
+    else if (context.pivot.nearest) lines.push(`Pivot ${context.pivot.nearest.name}: ${fmtPrice(context.pivot.nearest.dist)} ${context.pivot.nearest.above ? 'arriba' : 'abajo'} de la zona`);
+  }
+  if (context.atrDistance != null) lines.push(`Distancia: ${context.atrDistance.toFixed(1)} ATR`);
+  if (context.volumeAbnormal) lines.push(`Volumen ${context.volumeAbnormal} reciente`);
+  if (context.structureCompatible) lines.push(`Estructura de mercado: ${context.structureCompatible}`);
+  if (!lines.length) return '';
+  return `<div class="dim" style="font-size:10.5px; margin-top:6px; line-height:1.5;">${lines.join(' · ')}</div>`;
+}
 
 export function bounceBarHTML(stats) {
   if (!stats || stats.approaches === 0) {
@@ -55,6 +73,9 @@ export function renderPriceAction() {
       rrRow = `<div class="indicator-row"><div><div class="indicator-label">Riesgo / Recompensa</div><div class="indicator-caption">Distancia a la zona de oferta (posible objetivo) vs. distancia a la zona de demanda (posible límite de pérdida).</div></div><div style="text-align:right;"><div class="mono ${rrClass}">1 : ${ratio.toFixed(1)}</div></div></div>`;
     }
   }
+  const supportContext = pa.nearestSupport ? computeZoneContext(pa.nearestSupport, 'support', price, data) : null;
+  const resistanceContext = pa.nearestResistance ? computeZoneContext(pa.nearestResistance, 'resistance', price, data) : null;
+
   card.innerHTML = `
     <div class="card-title" style="margin-bottom:4px;">Zonas de oferta y demanda</div>
     <div class="dim" style="font-size:11px; margin-bottom:10px;">Analizado sobre ~${HISTORY_DAYS} días de historial (~${(HISTORY_DAYS / 252).toFixed(1)} años)</div>
@@ -64,6 +85,7 @@ export function renderPriceAction() {
         <div style="text-align:right;"><div class="mono tag-bad">${pa.nearestResistance ? '$' + fmtPrice(pa.nearestResistance.min) + '–' + fmtPrice(pa.nearestResistance.max) : '—'}</div></div>
       </div>
       ${pa.nearestResistance ? bounceBarHTML(pa.nearestResistance.bounceStats) : ''}
+      ${resistanceContext ? contextLinesHTML(resistanceContext) : ''}
     </div>
     <div class="indicator-row" style="display:block;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -71,9 +93,10 @@ export function renderPriceAction() {
         <div style="text-align:right;"><div class="mono tag-good">${pa.nearestSupport ? '$' + fmtPrice(pa.nearestSupport.min) + '–' + fmtPrice(pa.nearestSupport.max) : '—'}</div></div>
       </div>
       ${pa.nearestSupport ? bounceBarHTML(pa.nearestSupport.bounceStats) : ''}
+      ${supportContext ? contextLinesHTML(supportContext) : ''}
     </div>
     ${rrRow}
     ${proximityNote}
-    <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">La probabilidad es una estadística calculada matemáticamente sobre el historial real de esta acción (no una opinión de la IA). Es historia, no garantía del futuro.</div>
+    <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">La frecuencia histórica condicional es una estadística calculada matemáticamente sobre el historial real de esta acción (no una opinión de la IA, y no una predicción). Es historia, no garantía del futuro.</div>
   `;
 }
