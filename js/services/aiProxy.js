@@ -186,7 +186,7 @@ export async function fetchAIAnalysis(symbol) {
     const central = computeCentralScore(centralInputs);
     if (central) {
       const dimLines = Object.entries(central.dims).map(([k, v]) => `${k}: ${Math.round(v)}/100`).join(', ');
-      priceLines.push(`Motor Central (promedio de ${central.dimCount} de 6 dimensiones, calculado matemáticamente — no inventado): puntaje general ${Math.round(central.avgScore)}/100, nivel de confianza ${central.confidence}% (más alto cuando los motores coinciden entre sí, más bajo cuando se contradicen). Desglose: ${dimLines}.`);
+      priceLines.push(`Motor Central (promedio de ${central.dimCount} de 6 dimensiones, calculado matemáticamente — no inventado): puntaje general ${Math.round(central.avgScore)}/100, dirección dominante ${central.direction}, alineación de señales (Signal Strength) ${central.signalStrength}% — qué tanto concuerdan las dimensiones entre sí, sin indicar dirección (más alto cuando coinciden, más bajo cuando se contradicen). Desglose: ${dimLines}.`);
     }
   } else {
     priceLines.push('(Sin indicadores ni zonas de precio disponibles todavía — solo hay precio en vivo)');
