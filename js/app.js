@@ -77,6 +77,24 @@ function showMain() {
   document.getElementById('gearBtn').style.display = 'inline-block';
 }
 
+// Tooltips ⓘ — reutiliza el mismo patrón visual toggle-body/open que ya existe,
+// pero con su propia lógica: al abrir uno, cierra el anterior si había otro
+// abierto. Completamente aparte de sectionState (eso es para tarjetas/secciones,
+// esto es solo para explicaciones breves). No lee ni modifica ningún dato.
+let openTooltipId = null;
+
+function toggleTooltip(id) {
+  if (openTooltipId && openTooltipId !== id) {
+    const prevBody = document.getElementById(openTooltipId + '-body');
+    if (prevBody) prevBody.classList.remove('open');
+  }
+  const body = document.getElementById(id + '-body');
+  if (!body) return;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  openTooltipId = isOpen ? null : id;
+}
+
 function selectPerformancePeriod(period) {
   state.perfPeriod = period;
   renderPerformanceCard();
@@ -211,6 +229,7 @@ window.fetchAIAnalysis = fetchAIAnalysis;
 window.fetchGEX = fetchGEX;
 window.calculateRisk = calculateRiskResults;
 window.switchTab = switchTab;
+window.toggleTooltip = toggleTooltip;
 window.selectPerformancePeriod = selectPerformancePeriod;
 
 showMain();
