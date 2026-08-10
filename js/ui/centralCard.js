@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { computeNewsSentimentTally } from '../analysis/sentimentEngine.js';
-import { computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeCentralScore } from '../analysis/centralEngine.js';
+import { computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeCentralScore, computeStatisticalConfidence } from '../analysis/centralEngine.js';
 
 function scoreRow(label, score) {
   if (score == null) return `<div class="indicator-row"><div class="indicator-label">${label}</div><div class="dim" style="font-size:12px;">sin datos hoy</div></div>`;
@@ -41,6 +41,7 @@ export function renderCentralCard() {
   }
 
   const prob = data.directionalProbability;
+  const statConf = computeStatisticalConfidence(prob);
 
   card.innerHTML = `
     <div class="card-title" style="margin-bottom:4px;">Motor Central</div>
@@ -49,6 +50,7 @@ export function renderCentralCard() {
       <div class="mono" style="font-size:32px; font-weight:700;">${Math.round(central.avgScore)}<span style="font-size:16px; color:var(--paper-dim);">/100</span></div>
       <div class="dim" style="font-size:11px;">Alineación de señales: ${central.signalStrength}% · Dirección dominante: ${central.direction}</div>
     </div>
+    <div class="indicator-row"><div><div class="indicator-label">Confianza estadística</div><div class="indicator-caption">Qué tan angosto es el intervalo de Wilson de la frecuencia histórica seleccionada (${statConf ? statConf.source : '—'}). Un porcentaje mayor significa una estimación más precisa — no una mayor probabilidad de que el precio suba o baje.</div></div><div style="text-align:right;"><div class="mono tag-neutral">${statConf != null ? statConf.value + '%' : 'sin datos'}</div></div></div>
     ${scoreRow('Dirección de tendencia', central.dims.trendDirection != null ? Math.round(central.dims.trendDirection) : null)}
     ${scoreRow('Fuerza de tendencia', central.dims.trendStrength != null ? Math.round(central.dims.trendStrength) : null)}
     ${scoreRow('Estructura de mercado', central.dims.marketStructure != null ? Math.round(central.dims.marketStructure) : null)}
