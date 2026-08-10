@@ -81,6 +81,33 @@ export function computeVolatilityScore(volatilityRegime) {
   return 50;
 }
 
+// Confianza estadística — mide qué tan ANGOSTO es el intervalo de Wilson del
+// resultado histórico más frecuente observado (subió/bajó/consolidó, el que
+// tenga el % más alto de los tres). Un intervalo angosto = estimación precisa;
+// uno ancho = poca evidencia. NO indica hacia qué lado se inclina el mercado
+// -- esa pregunta ya la responde Direction, por separado.
+//
+// Cuál de los 3 Wilson usa: exactamente el que corresponde al porcentaje más
+// alto entre upPct/downPct/flatPct -- por ejemplo, si "bajó" fue el resultado
+// más frecuente históricamente, se usa wilsonDown, no wilsonUp. No se
+// recalcula nada -- se reutiliza el objeto Wilson que probabilityEngine.js ya
+// produjo en la Fase 1, sin tocarlo.
+//
+// Por qué el ancho está garantizado en [0,1] sin necesidad de un tope elegido
+// a mano: computeWilsonInterval ya hace lower=Math.max(0,...) y
+// upper=Math.min(1,...) -- así que (upper-lower) nunca puede salir de [0,1],
+// es una propiedad del código ya existente, no un umbral nuevo.
+export function computeStatisticalConfidence(directionalProbability) {
+  if (!directionalProbability) return null;
+  const { upPct, downPct, flatPct, wilsonUp, wilsonDown, wilsonFlat } = directionalProbability;
+  let wilson = wilsonUp, maxPct = upPct, source = 'wilsonUp';
+  if (downPct > maxPct) { wilson = wilsonDown; maxPct = downPct; source = 'wilsonDown'; }
+  if (flatPct > maxPct) { wilson = wilsonFlat; maxPct = flatPct; source = 'wilsonFlat'; }
+  if (!wilson) return null;
+  const width = wilson.upper - wilson.lower;
+  return { value: Math.round((1 - width) * 100), source };
+}
+
 export function computeCentralScore(inputs) {
   const dims = {};
   if (inputs.trendDirectionScore != null) dims.trendDirection = inputs.trendDirectionScore;
