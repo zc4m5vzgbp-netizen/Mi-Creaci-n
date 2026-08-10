@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { HISTORY_DAYS } from '../constants.js';
+import { tipIcon, tipBody } from './tooltip.js';
 
 function wilsonCaption(wilson) {
   if (!wilson) return '';
@@ -37,9 +38,10 @@ export function renderProbabilityEngine() {
       <div style="width:${down}%; background:var(--loss); display:flex; align-items:center; justify-content:center;">${down >= 12 ? `<span class="mono" style="font-size:11px; font-weight:700; color:#0B0E11;">${down}%</span>` : ''}</div>
     </div>
 
-    <div class="indicator-row"><div><div class="indicator-label">Frecuencia histórica: subió</div><div class="indicator-caption">${wilsonCaption(prob.wilsonUp)}</div></div><div class="mono tag-good">${up}%</div></div>
+    <div class="indicator-row"><div><div class="indicator-label">Frecuencia histórica: subió</div><div class="indicator-caption">${wilsonCaption(prob.wilsonUp)} ${tipIcon('tip-wilson')}</div></div><div class="mono tag-good">${up}%</div></div>
     <div class="indicator-row"><div><div class="indicator-label">Frecuencia histórica: consolidó</div><div class="indicator-caption">${wilsonCaption(prob.wilsonFlat)}</div></div><div class="mono tag-neutral">${flat}%</div></div>
     <div class="indicator-row"><div><div class="indicator-label">Frecuencia histórica: bajó</div><div class="indicator-caption">${wilsonCaption(prob.wilsonDown)}</div></div><div class="mono tag-bad">${down}%</div></div>
+    ${tipBody('tip-wilson', '<strong>Qué significa:</strong> rango de incertidumbre alrededor de la frecuencia histórica.<br><br><strong>Cómo interpretarlo:</strong> entre más angosto, más precisa es la estimación; entre más ancho, menos datos hay para confiar en el número.')}
 
     <div style="font-size:10.5px; color:var(--paper-dim); font-style:italic; margin-top:10px; line-height:1.4;">Esto es frecuencia histórica condicional, no una probabilidad de predicción: en configuraciones pasadas parecidas a la de hoy, así se distribuyó el resultado ${prob.thresholdPct}% en los próximos ${prob.lookAheadDays} días de cotización, sobre tu historial real de ~${HISTORY_DAYS} días. El intervalo (IC 95%, método de Wilson) muestra la incertidumbre real según el tamaño de la muestra — entre más angosto, más confiable.</div>
   `;
