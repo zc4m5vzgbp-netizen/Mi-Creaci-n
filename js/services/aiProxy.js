@@ -6,7 +6,7 @@ import { renderExtraNews } from '../ui/newsCards.js';
 import { renderSentimentCard } from '../ui/sentimentCard.js';
 import { renderCentralCard } from '../ui/centralCard.js';
 import { computeNewsSentimentTally, computeOverallSentiment } from '../analysis/sentimentEngine.js';
-import { computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeCentralScore } from '../analysis/centralEngine.js';
+import { computeVolumeScore, computeOptionsScoreFromWalls, computeNewsScore, computeCentralScore, computeStatisticalConfidence } from '../analysis/centralEngine.js';
 import { computeYoY } from '../ui/fundamentalCard.js';
 import { computeZoneContext } from '../analysis/priceAction.js';
 
@@ -209,7 +209,9 @@ export async function fetchAIAnalysis(symbol) {
     const central = computeCentralScore(centralInputs);
     if (central) {
       const dimLines = Object.entries(central.dims).map(([k, v]) => `${k}: ${Math.round(v)}/100`).join(', ');
-      priceLines.push(`Motor Central (promedio de ${central.dimCount} de 8 dimensiones, calculado matemáticamente — no inventado): puntaje general ${Math.round(central.avgScore)}/100, dirección dominante ${central.direction}, alineación de señales (Signal Strength) ${central.signalStrength}% — qué tanto concuerdan las dimensiones entre sí, sin indicar dirección (más alto cuando coinciden, más bajo cuando se contradicen). Desglose: ${dimLines}.`);
+      const statConf = computeStatisticalConfidence(ind.directionalProbability);
+      const statConfText = statConf ? ` Confianza estadística: ${statConf.value}% (basada en el ancho del intervalo de Wilson de ${statConf.source} — mide qué tan precisa es esa estimación histórica, NO qué tan probable es que el precio suba o baje; nunca la confundas con Signal Strength ni con Direction, son 3 conceptos distintos).` : '';
+      priceLines.push(`Motor Central (promedio de ${central.dimCount} de 8 dimensiones, calculado matemáticamente — no inventado): puntaje general ${Math.round(central.avgScore)}/100, dirección dominante ${central.direction}, alineación de señales (Signal Strength) ${central.signalStrength}% — qué tanto concuerdan las dimensiones entre sí, sin indicar dirección (más alto cuando coinciden, más bajo cuando se contradicen).${statConfText} Desglose: ${dimLines}.`);
     }
   } else {
     priceLines.push('(Sin indicadores ni zonas de precio disponibles todavía — solo hay precio en vivo)');
